@@ -1,0 +1,1833 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<!--
+  PROLIFIC WEALTH GROUP — CLIENT PORTAL
+  Design Prototype (v0.1) — static front-end, dummy data only.
+
+  DEVELOPER HANDOFF NOTES
+  ------------------------
+  This is a single-file, framework-free prototype (HTML/CSS/vanilla JS).
+  Everything works client-side against the DUMMY_DATA object near the top
+  of the <script> block. Every place that should eventually call a real
+  API is marked with a  // DEV: ...  comment.
+
+  Suggested resources to expose from the backend (naming is a suggestion,
+  not a requirement) — likely backed by GoHighLevel + Airtable given PWG's
+  existing stack:
+    GET/POST/PATCH   /api/clients
+    GET/POST/PATCH   /api/funding-records
+    GET/POST/PATCH   /api/fundability-audits
+    GET/POST/PATCH   /api/partners
+    GET/POST/PATCH   /api/tasks
+    GET              /api/activity
+    GET              /api/dashboard/summary
+    POST             /api/auth/login, /api/auth/logout
+
+  Open the "Dev Notes" link in the sidebar footer to see this same summary
+  rendered inside the app.
+-->
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Prolific Wealth Group — Portal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --navy-900:#0A1B33;
+    --navy-800:#0F2542;
+    --navy-700:#16345C;
+    --navy-600:#1E4A7A;
+    --sky-500:#2F8FEF;
+    --sky-600:#1C74D1;
+    --sky-100:#E8F2FF;
+    --sky-050:#F5F9FF;
+    --canvas:#F5F7FA;
+    --surface:#FFFFFF;
+    --border:#E3E8EF;
+    --border-soft:#EDF1F6;
+    --ink:#101828;
+    --slate:#5B6B82;
+    --slate-light:#8A97AB;
+    --green-600:#178A4C;
+    --green-100:#E3F7EA;
+    --amber-600:#B5760A;
+    --amber-100:#FCF0DC;
+    --red-600:#C4291D;
+    --red-100:#FBE7E5;
+    --violet-600:#6D4EDB;
+    --violet-100:#EEE9FC;
+    --radius:12px;
+    --radius-sm:8px;
+    --shadow-sm:0 1px 2px rgba(16,24,40,0.06);
+    --shadow-md:0 4px 16px rgba(16,24,40,0.08);
+    --shadow-lg:0 12px 40px rgba(10,27,51,0.18);
+  }
+  *,*::before,*::after{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    margin:0;
+    background:var(--canvas);
+    color:var(--ink);
+    font-family:'Inter',sans-serif;
+    font-size:14px;
+    -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3,.font-display{ font-family:'Space Grotesk',sans-serif; letter-spacing:-0.01em; }
+  .num{ font-family:'IBM Plex Mono',monospace; font-variant-numeric:tabular-nums; }
+  a{ color:inherit; }
+  button{ font-family:inherit; cursor:pointer; }
+  ::selection{ background:var(--sky-100); }
+
+  /* ---------- App shell ---------- */
+  .app{ display:flex; min-height:100vh; }
+
+  /* Sidebar */
+  .sidebar{
+    width:250px; flex:0 0 250px; background:var(--navy-900); color:#CBD8EA;
+    display:flex; flex-direction:column; position:fixed; top:0; bottom:0; left:0;
+    z-index:40;
+  }
+  .brand{ display:flex; align-items:center; gap:10px; padding:22px 20px 18px; }
+  .brand-mark{
+    width:34px; height:34px; border-radius:9px;
+    background:linear-gradient(135deg,var(--sky-500),var(--navy-600));
+    display:flex; align-items:center; justify-content:center;
+    font-family:'Space Grotesk',sans-serif; font-weight:700; color:#fff; font-size:15px;
+    flex:0 0 auto;
+  }
+  .brand-text{ line-height:1.15; }
+  .brand-text .name{ font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:14.5px; color:#fff; }
+  .brand-text .sub{ font-size:11px; color:#7C8FAE; letter-spacing:.03em; }
+
+  .nav{ flex:1; padding:10px 12px; overflow-y:auto; }
+  .nav-group-label{ font-size:10.5px; text-transform:uppercase; letter-spacing:.08em; color:#5C7093; padding:16px 10px 6px; }
+  .nav-item{
+    display:flex; align-items:center; gap:11px; padding:9px 11px; border-radius:8px;
+    color:#B7C6DE; text-decoration:none; font-size:13.5px; font-weight:500; margin-bottom:2px;
+    border:none; background:transparent; width:100%; text-align:left;
+  }
+  .nav-item svg{ width:17px; height:17px; flex:0 0 auto; opacity:.85; }
+  .nav-item:hover{ background:rgba(255,255,255,0.06); color:#fff; }
+  .nav-item.active{ background:var(--sky-500); color:#fff; box-shadow:var(--shadow-sm); }
+  .nav-item .count{
+    margin-left:auto; font-size:11px; font-family:'IBM Plex Mono',monospace; background:rgba(255,255,255,0.1);
+    padding:1px 6px; border-radius:20px; color:#DCE6F5;
+  }
+  .nav-item.active .count{ background:rgba(255,255,255,0.25); color:#fff; }
+
+  .sidebar-footer{ padding:14px 18px 18px; border-top:1px solid rgba(255,255,255,0.08); }
+  .sidebar-footer .proto-tag{
+    display:inline-block; font-size:10.5px; color:#8BA6CC; background:rgba(47,143,239,0.15);
+    border:1px solid rgba(47,143,239,0.3); padding:2px 8px; border-radius:20px; margin-bottom:10px;
+  }
+  .dev-notes-link{ display:flex; align-items:center; gap:7px; font-size:12.5px; color:#8BA6CC; background:none; border:none; padding:0; }
+  .dev-notes-link:hover{ color:#fff; }
+
+  /* Main column */
+  .main{ margin-left:250px; flex:1; display:flex; flex-direction:column; min-width:0; }
+
+  /* Topbar */
+  .topbar{
+    height:64px; flex:0 0 auto; background:var(--surface); border-bottom:1px solid var(--border);
+    display:flex; align-items:center; gap:16px; padding:0 24px; position:sticky; top:0; z-index:30;
+  }
+  .page-title{ font-size:18px; font-weight:600; }
+  .page-sub{ font-size:12px; color:var(--slate); margin-top:1px; }
+  .topbar-search{
+    margin-left:12px; flex:1; max-width:360px; position:relative;
+  }
+  .topbar-search input{
+    width:100%; padding:8px 12px 8px 34px; border-radius:9px; border:1px solid var(--border);
+    background:var(--canvas); font-size:13px; color:var(--ink);
+  }
+  .topbar-search input:focus{ outline:none; border-color:var(--sky-500); background:#fff; }
+  .topbar-search svg{ position:absolute; left:11px; top:50%; transform:translateY(-50%); width:15px; height:15px; color:var(--slate-light); }
+  .topbar-actions{ margin-left:auto; display:flex; align-items:center; gap:10px; }
+  .icon-btn{
+    width:36px; height:36px; border-radius:9px; border:1px solid var(--border); background:#fff;
+    display:flex; align-items:center; justify-content:center; position:relative; color:var(--slate);
+  }
+  .icon-btn:hover{ background:var(--canvas); }
+  .icon-btn svg{ width:17px; height:17px; }
+  .dot-badge{
+    position:absolute; top:-3px; right:-3px; width:16px; height:16px; border-radius:50%;
+    background:var(--sky-500); color:#fff; font-size:9.5px; display:flex; align-items:center; justify-content:center;
+    border:2px solid #fff; font-family:'IBM Plex Mono',monospace;
+  }
+  .user-chip{
+    display:flex; align-items:center; gap:9px; padding:5px 10px 5px 5px; border-radius:24px; border:1px solid var(--border);
+    background:#fff;
+  }
+  .avatar{
+    width:28px; height:28px; border-radius:50%; background:var(--navy-700); color:#fff; font-size:11.5px; font-weight:600;
+    display:flex; align-items:center; justify-content:center; flex:0 0 auto; font-family:'Space Grotesk',sans-serif;
+  }
+  .user-chip .who{ line-height:1.1; }
+  .user-chip .who .n{ font-size:12.5px; font-weight:600; }
+  .user-chip .who .r{ font-size:10.5px; color:var(--slate); }
+
+  .content{ padding:24px 28px 60px; }
+  .view{ display:none; }
+  .view.active{ display:block; animation:fadein .25s ease; }
+  @keyframes fadein{ from{opacity:0; transform:translateY(4px);} to{opacity:1; transform:none;} }
+
+  /* ---------- Reusable bits ---------- */
+  .row{ display:flex; align-items:center; }
+  .between{ justify-content:space-between; }
+  .gap8{ gap:8px; } .gap10{ gap:10px; } .gap12{ gap:12px; } .gap16{ gap:16px; }
+  .section-head{ margin-bottom:16px; }
+  .section-head h2{ font-size:16px; font-weight:600; margin:0 0 3px; }
+  .section-head p{ margin:0; font-size:12.5px; color:var(--slate); }
+
+  .btn{
+    display:inline-flex; align-items:center; gap:7px; border-radius:9px; padding:9px 14px; font-size:13px; font-weight:600;
+    border:1px solid var(--border); background:#fff; color:var(--ink); white-space:nowrap;
+  }
+  .btn:hover{ background:var(--canvas); }
+  .btn svg{ width:15px; height:15px; }
+  .btn-primary{ background:var(--sky-500); border-color:var(--sky-500); color:#fff; }
+  .btn-primary:hover{ background:var(--sky-600); }
+  .btn-dark{ background:var(--navy-900); border-color:var(--navy-900); color:#fff; }
+  .btn-dark:hover{ background:var(--navy-800); }
+  .btn-sm{ padding:6px 10px; font-size:12px; border-radius:7px; }
+  .btn-ghost{ border-color:transparent; background:transparent; }
+  .btn-ghost:hover{ background:var(--canvas); }
+  .btn-danger-ghost{ border-color:transparent; background:transparent; color:var(--red-600); }
+  .btn-danger-ghost:hover{ background:var(--red-100); }
+  .btn:disabled{ opacity:.5; cursor:not-allowed; }
+
+  .card{ background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); box-shadow:var(--shadow-sm); }
+  .card-pad{ padding:18px 20px; }
+
+  .kpi-grid{ display:grid; grid-template-columns:repeat(6,1fr); gap:14px; margin-bottom:22px; }
+  .kpi{ padding:16px 16px; }
+  .kpi .label{ font-size:11.5px; color:var(--slate); font-weight:600; text-transform:uppercase; letter-spacing:.03em; }
+  .kpi .value{ font-size:22px; font-weight:600; margin-top:8px; font-family:'Space Grotesk',sans-serif; }
+  .kpi .delta{ font-size:11.5px; margin-top:6px; display:flex; align-items:center; gap:4px; }
+  .delta.up{ color:var(--green-600); } .delta.down{ color:var(--red-600); } .delta.flat{ color:var(--slate); }
+
+  .badge{ display:inline-flex; align-items:center; gap:5px; padding:3px 9px; border-radius:20px; font-size:11.5px; font-weight:600; white-space:nowrap; }
+  .badge-dot{ width:6px; height:6px; border-radius:50%; }
+  .badge-blue{ background:var(--sky-100); color:var(--sky-600); }
+  .badge-green{ background:var(--green-100); color:var(--green-600); }
+  .badge-amber{ background:var(--amber-100); color:var(--amber-600); }
+  .badge-red{ background:var(--red-100); color:var(--red-600); }
+  .badge-violet{ background:var(--violet-100); color:var(--violet-600); }
+  .badge-slate{ background:var(--border-soft); color:var(--slate); }
+
+  /* Constraint meter — signature component */
+  .constraint-meter{ display:flex; flex-direction:column; gap:5px; min-width:150px; }
+  .constraint-meter .cm-label{ font-size:10.5px; font-weight:600; color:var(--slate); display:flex; justify-content:space-between; }
+  .constraint-meter .cm-label b{ color:var(--ink); font-weight:600; }
+  .cm-track{ display:flex; gap:3px; height:6px; }
+  .cm-seg{ flex:1; border-radius:3px; background:var(--border-soft); }
+  .cm-seg.active{ background:var(--sky-500); box-shadow:0 0 0 2px var(--sky-100); }
+  .cm-mini{ display:flex; align-items:center; gap:6px; font-size:11px; color:var(--slate); }
+  .cm-mini .dot{ width:7px; height:7px; border-radius:50%; background:var(--sky-500); flex:0 0 auto; }
+
+  /* Tables */
+  table{ width:100%; border-collapse:collapse; font-size:13px; }
+  thead th{
+    text-align:left; font-size:11px; text-transform:uppercase; letter-spacing:.04em; color:var(--slate);
+    font-weight:600; padding:11px 14px; border-bottom:1px solid var(--border); background:var(--canvas);
+    position:sticky; top:0; cursor:pointer; user-select:none; white-space:nowrap;
+  }
+  thead th:hover{ color:var(--ink); }
+  thead th .arrow{ opacity:.4; margin-left:3px; }
+  tbody td{ padding:12px 14px; border-bottom:1px solid var(--border-soft); vertical-align:middle; }
+  tbody tr{ transition:background .1s; }
+  tbody tr.clickable:hover{ background:var(--sky-050); cursor:pointer; }
+  .table-wrap{ overflow:auto; border-radius:var(--radius); border:1px solid var(--border); }
+  .table-wrap table{ background:#fff; }
+  .cell-primary{ font-weight:600; }
+  .cell-sub{ font-size:11.5px; color:var(--slate); margin-top:1px; }
+  .table-summary td{ font-weight:700; background:var(--canvas); border-top:2px solid var(--border); }
+
+  .filter-bar{ display:flex; align-items:center; gap:10px; margin-bottom:14px; flex-wrap:wrap; }
+  .filter-bar input[type=text], .filter-bar select{
+    padding:8px 11px; border-radius:8px; border:1px solid var(--border); font-size:12.5px; background:#fff; color:var(--ink);
+  }
+  .chip{
+    padding:6px 12px; border-radius:20px; border:1px solid var(--border); font-size:12px; font-weight:600; background:#fff; color:var(--slate);
+  }
+  .chip.active{ background:var(--navy-900); color:#fff; border-color:var(--navy-900); }
+
+  /* Kanban */
+  .kanban{ display:flex; gap:14px; overflow-x:auto; padding-bottom:10px; align-items:flex-start; }
+  .kanban-col{ flex:0 0 268px; background:#EEF2F7; border-radius:var(--radius); display:flex; flex-direction:column; max-height:calc(100vh - 260px); }
+  .kanban-col-head{ padding:13px 13px 10px; }
+  .kanban-col-head .title{ font-size:12.5px; font-weight:700; display:flex; justify-content:space-between; align-items:center; }
+  .kanban-col-head .meta{ font-size:11px; color:var(--slate); margin-top:3px; font-family:'IBM Plex Mono',monospace; }
+  .kanban-col-body{ padding:0 10px 10px; overflow-y:auto; flex:1; display:flex; flex-direction:column; gap:9px; }
+  .kanban-card{
+    background:#fff; border:1px solid var(--border); border-radius:10px; padding:12px 12px 11px; box-shadow:var(--shadow-sm);
+  }
+  .kanban-card:hover{ border-color:var(--sky-500); cursor:pointer; box-shadow:var(--shadow-md); }
+  .kanban-card .biz{ font-weight:600; font-size:13px; margin-bottom:1px; }
+  .kanban-card .contact{ font-size:11.5px; color:var(--slate); margin-bottom:9px; }
+  .kanban-card .foot{ display:flex; justify-content:space-between; align-items:center; margin-top:9px; }
+  .kanban-card .ask{ font-size:12.5px; font-weight:700; font-family:'IBM Plex Mono',monospace; }
+  .kanban-card .rep-avatar{
+    width:22px; height:22px; border-radius:50%; background:var(--navy-700); color:#fff; font-size:9.5px; font-weight:700;
+    display:flex; align-items:center; justify-content:center; font-family:'Space Grotesk',sans-serif;
+  }
+  .kanban-add{
+    margin:0 10px 12px; padding:9px; border-radius:9px; border:1.5px dashed var(--slate-light); background:transparent;
+    color:var(--slate); font-size:12px; font-weight:600;
+  }
+  .kanban-add:hover{ background:#fff; color:var(--ink); }
+
+  /* Modal / drawer */
+  .overlay{
+    position:fixed; inset:0; background:rgba(10,20,38,0.45); display:none; align-items:center; justify-content:center; z-index:100; padding:20px;
+    backdrop-filter:blur(2px);
+  }
+  .overlay.open{ display:flex; }
+  .modal{ background:#fff; border-radius:16px; width:100%; max-width:560px; max-height:88vh; overflow-y:auto; box-shadow:var(--shadow-lg); }
+  .modal-head{ padding:20px 22px 14px; display:flex; justify-content:space-between; align-items:flex-start; border-bottom:1px solid var(--border-soft); }
+  .modal-head h3{ margin:0 0 3px; font-size:16.5px; }
+  .modal-head p{ margin:0; font-size:12px; color:var(--slate); }
+  .modal-body{ padding:18px 22px; display:flex; flex-direction:column; gap:14px; }
+  .modal-foot{ padding:16px 22px 20px; display:flex; justify-content:flex-end; gap:10px; border-top:1px solid var(--border-soft); }
+  .close-x{ border:none; background:var(--canvas); width:30px; height:30px; border-radius:8px; display:flex; align-items:center; justify-content:center; color:var(--slate); flex:0 0 auto; }
+  .close-x:hover{ background:var(--border-soft); }
+
+  .field label{ display:block; font-size:12px; font-weight:600; margin-bottom:6px; color:var(--ink); }
+  .field .hint{ font-size:11px; color:var(--slate-light); font-weight:400; margin-left:4px; }
+  .field input, .field select, .field textarea{
+    width:100%; padding:9px 11px; border-radius:8px; border:1px solid var(--border); font-size:13px; font-family:inherit; background:#fff; color:var(--ink);
+  }
+  .field input:focus, .field select:focus, .field textarea:focus{ outline:none; border-color:var(--sky-500); box-shadow:0 0 0 3px var(--sky-100); }
+  .field textarea{ resize:vertical; min-height:70px; }
+  .field-row{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .field-row3{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; }
+  .checklist label{ display:flex; align-items:center; gap:9px; font-size:12.5px; font-weight:500; padding:7px 0; color:var(--ink); }
+  .radio-pills{ display:flex; gap:8px; flex-wrap:wrap; }
+  .radio-pill{ position:relative; }
+  .radio-pill input{ position:absolute; opacity:0; }
+  .radio-pill span{
+    display:inline-block; padding:8px 13px; border-radius:9px; border:1px solid var(--border); font-size:12.5px; font-weight:600; color:var(--slate);
+  }
+  .radio-pill input:checked + span{ background:var(--navy-900); border-color:var(--navy-900); color:#fff; }
+
+  /* Drawer (client detail) */
+  .drawer-overlay{ position:fixed; inset:0; background:rgba(10,20,38,0.4); display:none; z-index:110; }
+  .drawer-overlay.open{ display:block; }
+  .drawer{
+    position:fixed; top:0; right:0; bottom:0; width:520px; max-width:94vw; background:#fff; z-index:111;
+    box-shadow:-14px 0 40px rgba(10,20,38,0.25); transform:translateX(100%); transition:transform .28s ease; display:flex; flex-direction:column;
+  }
+  .drawer-overlay.open .drawer{ transform:translateX(0); }
+  .drawer-head{ padding:22px 24px 16px; border-bottom:1px solid var(--border-soft); }
+  .drawer-tabs{ display:flex; gap:4px; padding:0 20px; border-bottom:1px solid var(--border); }
+  .drawer-tab{ padding:11px 12px; font-size:12.5px; font-weight:600; color:var(--slate); border:none; background:none; border-bottom:2px solid transparent; }
+  .drawer-tab.active{ color:var(--sky-600); border-color:var(--sky-500); }
+  .drawer-body{ padding:20px 24px; overflow-y:auto; flex:1; }
+  .drawer-pane{ display:none; } .drawer-pane.active{ display:block; }
+  .kv{ display:grid; grid-template-columns:1fr 1fr; gap:12px 16px; margin-bottom:18px; }
+  .kv .item .k{ font-size:10.5px; text-transform:uppercase; letter-spacing:.03em; color:var(--slate-light); font-weight:600; margin-bottom:3px; }
+  .kv .item .v{ font-size:13.5px; font-weight:600; }
+
+  .activity-item{ display:flex; gap:11px; padding:11px 0; border-bottom:1px solid var(--border-soft); }
+  .activity-item:last-child{ border-bottom:none; }
+  .activity-dot{ width:8px; height:8px; border-radius:50%; margin-top:5px; flex:0 0 auto; background:var(--sky-500); }
+  .activity-item .txt{ font-size:12.5px; }
+  .activity-item .ts{ font-size:11px; color:var(--slate-light); margin-top:2px; }
+
+  .empty-state{ text-align:center; padding:50px 20px; color:var(--slate); }
+  .empty-state svg{ width:38px; height:38px; margin-bottom:12px; color:var(--slate-light); }
+  .empty-state .t{ font-weight:600; color:var(--ink); margin-bottom:4px; font-size:13.5px; }
+  .empty-state .d{ font-size:12.5px; }
+
+  /* Score ring */
+  .score-ring{ position:relative; width:74px; height:74px; flex:0 0 auto; }
+  .score-ring svg{ transform:rotate(-90deg); width:100%; height:100%; }
+  .score-ring .bg{ fill:none; stroke:var(--border-soft); stroke-width:8; }
+  .score-ring .fg{ fill:none; stroke-width:8; stroke-linecap:round; transition:stroke-dasharray .4s; }
+  .score-ring .val{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:17px; }
+
+  .audit-item{ border:1px solid var(--border); border-radius:11px; padding:14px; display:flex; gap:14px; align-items:center; margin-bottom:10px; background:#fff; }
+  .audit-item .info{ flex:1; min-width:0; }
+  .audit-item .biz{ font-weight:600; font-size:13px; }
+  .audit-item .meta{ font-size:11.5px; color:var(--slate); margin-top:2px; }
+
+  /* Toasts */
+  .toast-stack{ position:fixed; bottom:22px; right:22px; display:flex; flex-direction:column; gap:10px; z-index:200; }
+  .toast{
+    background:var(--navy-900); color:#fff; padding:12px 16px; border-radius:10px; font-size:12.5px; font-weight:500;
+    box-shadow:var(--shadow-lg); display:flex; align-items:center; gap:10px; min-width:240px; animation:toastin .2s ease;
+  }
+  .toast svg{ width:16px; height:16px; color:var(--sky-500); flex:0 0 auto; }
+  @keyframes toastin{ from{opacity:0; transform:translateY(8px);} to{opacity:1; transform:none;} }
+
+  .two-col{ display:grid; grid-template-columns:1.15fr 0.85fr; gap:20px; align-items:start; }
+  .grid-2{ display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  .grid-3{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px; }
+  .stack{ display:flex; flex-direction:column; gap:16px; }
+  .divider{ height:1px; background:var(--border-soft); margin:16px 0; }
+
+  .settings-row{ display:flex; align-items:center; justify-content:space-between; padding:14px 0; border-bottom:1px solid var(--border-soft); }
+  .settings-row:last-child{ border-bottom:none; }
+  .settings-row .l .t{ font-size:13px; font-weight:600; }
+  .settings-row .l .d{ font-size:11.5px; color:var(--slate); margin-top:2px; }
+  .toggle{ width:40px; height:23px; border-radius:20px; background:var(--border); position:relative; border:none; flex:0 0 auto; }
+  .toggle.on{ background:var(--green-600); }
+  .toggle .knob{ width:17px; height:17px; border-radius:50%; background:#fff; position:absolute; top:3px; left:3px; transition:left .15s; box-shadow:0 1px 3px rgba(0,0,0,.3); }
+  .toggle.on .knob{ left:20px; }
+
+  /* Dev notes modal */
+  .devnotes pre{ background:var(--navy-900); color:#CBE0FF; padding:14px; border-radius:9px; font-size:11.5px; overflow-x:auto; font-family:'IBM Plex Mono',monospace; line-height:1.6; }
+  .devnotes h4{ font-size:12.5px; margin:16px 0 6px; }
+  .devnotes p, .devnotes li{ font-size:12.5px; color:var(--slate); line-height:1.6; }
+
+  @media (max-width: 1200px){
+    .kpi-grid{ grid-template-columns:repeat(3,1fr); }
+    .two-col{ grid-template-columns:1fr; }
+  }
+  @media (max-width: 880px){
+    .sidebar{ display:none; }
+    .main{ margin-left:0; }
+    .kpi-grid{ grid-template-columns:repeat(2,1fr); }
+    .grid-3, .grid-2, .field-row3, .field-row{ grid-template-columns:1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- ============ SIDEBAR ============ -->
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-mark">PW</div>
+      <div class="brand-text">
+        <div class="name">Prolific Wealth Group</div>
+        <div class="sub">Operator Portal</div>
+      </div>
+    </div>
+
+    <nav class="nav" id="navList">
+      <div class="nav-group-label">Overview</div>
+      <button class="nav-item active" data-view="dashboard">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
+        Dashboard
+      </button>
+
+      <div class="nav-group-label">Deal Flow</div>
+      <button class="nav-item" data-view="pipeline">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 5h18M6 12h12M10 19h4"/></svg>
+        Client Pipeline
+        <span class="count" id="navCountPipeline">0</span>
+      </button>
+      <button class="nav-item" data-view="funding">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        Funding Tracker
+      </button>
+      <button class="nav-item" data-view="audit">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+        Fundability Audits
+      </button>
+
+      <div class="nav-group-label">Relationships</div>
+      <button class="nav-item" data-view="clients">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="8" r="3.2"/><path d="M2.5 20c1-3.8 3.6-5.8 6.5-5.8s5.5 2 6.5 5.8"/><circle cx="18" cy="8.5" r="2.3"/><path d="M16 14.3c2.5.4 4.2 2.1 5 5.3"/></svg>
+        Clients
+      </button>
+      <button class="nav-item" data-view="partners">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 3l4 4-4 4M20 7H8a4 4 0 0 0-4 4v1M8 21l-4-4 4-4M4 17h12a4 4 0 0 0 4-4v-1"/></svg>
+        Referral Partners
+      </button>
+
+      <div class="nav-group-label">Operations</div>
+      <button class="nav-item" data-view="tasks">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M8 2v4M16 2v4M3 10h18M8 15l2 2 4-4"/></svg>
+        Tasks
+        <span class="count" id="navCountTasks">0</span>
+      </button>
+      <button class="nav-item" data-view="reports">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 15l4-5 3 3 5-7"/></svg>
+        Reports
+      </button>
+      <button class="nav-item" data-view="settings">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9c.11.36.29.6.6.9"/></svg>
+        Settings
+      </button>
+    </nav>
+
+    <div class="sidebar-footer">
+      <span class="proto-tag">Design prototype · v0.1</span>
+      <button class="dev-notes-link" onclick="openModal('modalDevNotes')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+        Dev integration notes
+      </button>
+    </div>
+  </aside>
+
+  <!-- ============ MAIN ============ -->
+  <div class="main">
+    <header class="topbar">
+      <div>
+        <div class="page-title" id="pageTitle">Dashboard</div>
+        <div class="page-sub" id="pageSub">Portfolio overview &amp; constraint diagnostics</div>
+      </div>
+      <div class="topbar-search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        <input type="text" id="globalSearch" placeholder="Search clients, businesses, partners…" />
+      </div>
+      <div class="topbar-actions">
+        <button class="icon-btn" onclick="toggleNotif()" id="notifBtn" title="Notifications">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
+          <span class="dot-badge">3</span>
+        </button>
+        <div class="user-chip">
+          <div class="avatar">BP</div>
+          <div class="who">
+            <div class="n">Branden Patterson</div>
+            <div class="r">Founder · COO</div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main class="content">
+
+      <!-- ================= DASHBOARD ================= -->
+      <section class="view active" id="view-dashboard">
+        <div class="kpi-grid" id="kpiGrid"></div>
+
+        <div class="two-col">
+          <div class="stack">
+            <div class="card card-pad">
+              <div class="section-head row between">
+                <div>
+                  <h2>Pipeline by stage</h2>
+                  <p>Active deal count &amp; value across the funnel</p>
+                </div>
+                <button class="btn btn-sm" data-view-link="pipeline">Open pipeline →</button>
+              </div>
+              <div id="funnelChart"></div>
+            </div>
+
+            <div class="card card-pad">
+              <div class="section-head">
+                <h2>Constraint diagnosis mix</h2>
+                <p>Primary bottleneck identified across active clients — drives the offer stack recommendation</p>
+              </div>
+              <div id="constraintChart" class="stack" style="gap:14px;"></div>
+            </div>
+          </div>
+
+          <div class="stack">
+            <div class="card card-pad">
+              <div class="row between section-head">
+                <h2 style="margin:0;">Quick actions</h2>
+              </div>
+              <div class="stack" style="gap:9px;">
+                <button class="btn btn-dark" style="justify-content:flex-start;" onclick="openModal('modalNewClient')">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+                  New client / lead
+                </button>
+                <button class="btn" style="justify-content:flex-start;" onclick="openModal('modalNewFunding')">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                  Log funding record
+                </button>
+                <button class="btn" style="justify-content:flex-start;" onclick="switchView('audit'); toast('Opened fundability audit intake','check')">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+                  Start fundability audit
+                </button>
+                <button class="btn" style="justify-content:flex-start;" onclick="toast('This would open your Calendly scheduling link','cal')">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+                  Schedule intake call
+                </button>
+              </div>
+            </div>
+
+            <div class="card card-pad">
+              <div class="section-head">
+                <h2>Upcoming tasks</h2>
+                <p>Next 5 open items across the team</p>
+              </div>
+              <div id="dashTaskList" class="stack" style="gap:2px;"></div>
+            </div>
+
+            <div class="card card-pad">
+              <div class="section-head">
+                <h2>Recent activity</h2>
+              </div>
+              <div id="activityFeed"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= PIPELINE ================= -->
+      <section class="view" id="view-pipeline">
+        <div class="filter-bar">
+          <input type="text" id="pipelineSearch" placeholder="Search deals…" style="min-width:200px;" oninput="renderPipeline()">
+          <select id="pipelineRepFilter" onchange="renderPipeline()">
+            <option value="">All reps</option>
+          </select>
+          <select id="pipelineConstraintFilter" onchange="renderPipeline()">
+            <option value="">All constraints</option>
+          </select>
+          <label class="chip" style="display:flex;align-items:center;gap:6px;">
+            <input type="checkbox" id="showClosedLost" onchange="renderPipeline()" style="margin:0;"> Show closed-lost
+          </label>
+          <button class="btn btn-primary btn-sm" style="margin-left:auto;" onclick="openModal('modalNewClient')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+            Add lead
+          </button>
+        </div>
+        <div class="kanban" id="kanbanBoard"></div>
+      </section>
+
+      <!-- ================= FUNDING TRACKER ================= -->
+      <section class="view" id="view-funding">
+        <div class="filter-bar">
+          <input type="text" id="fundingSearch" placeholder="Search client or lender…" style="min-width:220px;" oninput="renderFunding()">
+          <select id="fundingStatusFilter" onchange="renderFunding()">
+            <option value="">All statuses</option>
+            <option>Submitted</option>
+            <option>Underwriting</option>
+            <option>Approved</option>
+            <option>Funded</option>
+            <option>Declined</option>
+          </select>
+          <button class="btn btn-sm" onclick="toast('Exporting funding_tracker.csv','download')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12M7 10l5 5 5-5"/><path d="M5 21h14"/></svg>
+            Export CSV
+          </button>
+          <button class="btn btn-primary btn-sm" style="margin-left:auto;" onclick="openModal('modalNewFunding')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+            New funding record
+          </button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th onclick="sortFunding('client')">Client <span class="arrow">↕</span></th>
+                <th onclick="sortFunding('type')">Funding type <span class="arrow">↕</span></th>
+                <th onclick="sortFunding('requested')">Requested <span class="arrow">↕</span></th>
+                <th onclick="sortFunding('placed')">Placed <span class="arrow">↕</span></th>
+                <th onclick="sortFunding('lender')">Lender / source <span class="arrow">↕</span></th>
+                <th onclick="sortFunding('fee')">Success fee (10%) <span class="arrow">↕</span></th>
+                <th onclick="sortFunding('status')">Status <span class="arrow">↕</span></th>
+                <th onclick="sortFunding('date')">Date <span class="arrow">↕</span></th>
+              </tr>
+            </thead>
+            <tbody id="fundingTableBody"></tbody>
+            <tfoot id="fundingTableFoot"></tfoot>
+          </table>
+        </div>
+      </section>
+
+      <!-- ================= FUNDABILITY AUDIT ================= -->
+      <section class="view" id="view-audit">
+        <div class="two-col">
+          <div class="card card-pad">
+            <div class="section-head">
+              <h2>Fundability audit intake</h2>
+              <p>Diagnose the constraint before recommending an offer — this is the core PWG methodology</p>
+            </div>
+            <form id="auditForm" class="stack" style="gap:16px;" onsubmit="submitAudit(event)">
+              <div>
+                <label style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;color:var(--slate);">Business info</label>
+                <div class="field-row" style="margin-top:10px;">
+                  <div class="field"><label>Legal business name</label><input type="text" id="af_bizname" placeholder="e.g. Summit Ridge Contracting LLC" required></div>
+                  <div class="field"><label>Industry</label>
+                    <select id="af_industry">
+                      <option>Construction / Contracting</option>
+                      <option>Trucking / Freight</option>
+                      <option>Food Service / Restaurant</option>
+                      <option>Health &amp; Wellness</option>
+                      <option>Salon / Med Spa</option>
+                      <option>Auto Repair</option>
+                      <option>E-commerce / Retail</option>
+                      <option>Professional Services</option>
+                      <option>Other</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="field-row" style="margin-top:12px;">
+                  <div class="field"><label>Time in business <span class="hint">months</span></label><input type="number" id="af_tib" placeholder="18" min="0" required></div>
+                  <div class="field"><label>Avg. monthly revenue</label><input type="number" id="af_rev" placeholder="42000" min="0" required></div>
+                </div>
+              </div>
+
+              <div class="divider" style="margin:0;"></div>
+
+              <div>
+                <label style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;color:var(--slate);">Credit profile</label>
+                <div class="field-row" style="margin-top:10px;">
+                  <div class="field"><label>Business credit score <span class="hint">(0-100 Paydex or n/a)</span></label><input type="number" id="af_bizcredit" placeholder="72" min="0" max="100"></div>
+                  <div class="field"><label>Personal credit band</label>
+                    <select id="af_perscredit">
+                      <option>720+</option>
+                      <option selected>680–719</option>
+                      <option>620–679</option>
+                      <option>Below 620</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <div class="divider" style="margin:0;"></div>
+
+              <div>
+                <label style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;color:var(--slate);">Constraint diagnosis</label>
+                <p style="font-size:11.5px;color:var(--slate);margin:6px 0 10px;">Which bottleneck is limiting growth right now? Funding gets deployed against this constraint.</p>
+                <div class="radio-pills" id="constraintPills"></div>
+                <div class="field" style="margin-top:12px;"><label>Diagnosis notes</label><textarea id="af_notes" placeholder="What did discovery reveal about this constraint?"></textarea></div>
+              </div>
+
+              <div class="divider" style="margin:0;"></div>
+
+              <div>
+                <label style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;color:var(--slate);">Funding readiness checklist</label>
+                <div class="checklist" id="readinessChecklist" style="margin-top:6px;"></div>
+              </div>
+
+              <div class="row" style="justify-content:flex-end;gap:10px;">
+                <button type="button" class="btn" onclick="document.getElementById('auditForm').reset(); toast('Form cleared','x')">Clear</button>
+                <button type="submit" class="btn btn-primary">Run audit &amp; save</button>
+              </div>
+            </form>
+          </div>
+
+          <div class="stack">
+            <div class="card card-pad">
+              <div class="section-head">
+                <h2>Recent audits</h2>
+                <p>Fundability score = readiness × constraint clarity × credit profile</p>
+              </div>
+              <div id="auditList"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= CLIENTS ================= -->
+      <section class="view" id="view-clients">
+        <div class="filter-bar">
+          <input type="text" id="clientsSearch" placeholder="Search clients…" style="min-width:220px;" oninput="renderClients()">
+          <select id="clientsStageFilter" onchange="renderClients()"><option value="">All stages</option></select>
+          <button class="btn btn-primary btn-sm" style="margin-left:auto;" onclick="openModal('modalNewClient')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+            New client
+          </button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Business</th><th>Contact</th><th>Stage</th><th>Constraint</th><th>Funding placed</th><th>Rep</th><th>Last activity</th>
+              </tr>
+            </thead>
+            <tbody id="clientsTableBody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ================= PARTNERS ================= -->
+      <section class="view" id="view-partners">
+        <div class="kpi-grid" style="grid-template-columns:repeat(4,1fr);" id="partnerKpis"></div>
+        <div class="filter-bar">
+          <div class="section-head" style="margin:0;">
+            <h2>Referral partners</h2>
+            <p>CPAs, attorneys, brokers &amp; other sources sending business your way</p>
+          </div>
+          <button class="btn btn-primary btn-sm" style="margin-left:auto;" onclick="openModal('modalNewPartner')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+            Add partner
+          </button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>Partner</th><th>Type</th><th>Referrals sent</th><th>Funded</th><th>Payout owed</th><th>Payout paid</th><th>Referral link</th><th></th></tr>
+            </thead>
+            <tbody id="partnersTableBody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ================= TASKS ================= -->
+      <section class="view" id="view-tasks">
+        <div class="filter-bar">
+          <div class="row gap8" id="roleChips"></div>
+          <button class="btn btn-primary btn-sm" style="margin-left:auto;" onclick="openModal('modalNewTask')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+            New task
+          </button>
+        </div>
+        <div class="card">
+          <div id="taskListFull"></div>
+        </div>
+      </section>
+
+      <!-- ================= REPORTS ================= -->
+      <section class="view" id="view-reports">
+        <div class="grid-2">
+          <div class="card card-pad">
+            <div class="section-head"><h2>Funding placed by month</h2><p>Trailing 6 months, dummy data</p></div>
+            <div id="reportBarChart"></div>
+          </div>
+          <div class="card card-pad">
+            <div class="section-head"><h2>Conversion by stage</h2><p>% of leads that reach each stage</p></div>
+            <div id="reportFunnel2"></div>
+          </div>
+        </div>
+        <div class="card card-pad" style="margin-top:16px;">
+          <div class="section-head"><h2>Constraint distribution</h2><p>Same signature meter, portfolio-wide</p></div>
+          <div id="reportConstraint" class="stack" style="gap:14px;"></div>
+        </div>
+      </section>
+
+      <!-- ================= SETTINGS ================= -->
+      <section class="view" id="view-settings">
+        <div class="two-col">
+          <div class="stack">
+            <div class="card card-pad">
+              <div class="section-head"><h2>Team &amp; roles</h2><p>Pipeline SOP roles — used for task assignment &amp; deal ownership</p></div>
+              <div id="teamList"></div>
+            </div>
+            <div class="card card-pad">
+              <div class="section-head"><h2>Offer stack configuration</h2><p>Feeds funding-tracker fee calculations</p></div>
+              <div class="field-row">
+                <div class="field"><label>Constraint Funding Intensive — upfront fee</label><input type="text" value="$2,500" id="cfgUpfront"></div>
+                <div class="field"><label>Success fee %</label><input type="text" value="10%" id="cfgSuccess"></div>
+              </div>
+              <div class="field-row" style="margin-top:12px;">
+                <div class="field"><label>Partner subscription (auto-start Day 90)</label><input type="text" value="$497/mo" id="cfgPartner"></div>
+                <div class="field"><label>Referral payout %</label><input type="text" value="10%" id="cfgReferral"></div>
+              </div>
+              <div class="row" style="justify-content:flex-end;margin-top:14px;">
+                <button class="btn btn-primary btn-sm" onclick="toast('Offer stack settings saved','check')">Save changes</button>
+              </div>
+            </div>
+          </div>
+          <div class="stack">
+            <div class="card card-pad">
+              <div class="section-head"><h2>Integrations</h2><p>Connect the portal to your existing stack</p></div>
+              <div id="integrationsList"></div>
+            </div>
+            <div class="card card-pad">
+              <div class="section-head"><h2>Notifications</h2></div>
+              <div class="settings-row"><div class="l"><div class="t">New lead assigned</div><div class="d">Email + in-app</div></div><button class="toggle on" onclick="this.classList.toggle('on')"><span class="knob"></span></button></div>
+              <div class="settings-row"><div class="l"><div class="t">Funding status change</div><div class="d">In-app only</div></div><button class="toggle on" onclick="this.classList.toggle('on')"><span class="knob"></span></button></div>
+              <div class="settings-row"><div class="l"><div class="t">Task overdue</div><div class="d">Email + Slack</div></div><button class="toggle" onclick="this.classList.toggle('on')"><span class="knob"></span></button></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+</div>
+
+<!-- ============ NOTIFICATIONS DROPDOWN ============ -->
+<div id="notifPanel" class="card" style="display:none;position:fixed;top:60px;right:88px;width:320px;z-index:150;padding:6px;box-shadow:var(--shadow-lg);">
+  <div style="padding:10px 12px;font-weight:600;font-size:13px;">Notifications</div>
+  <div id="notifItems"></div>
+</div>
+
+<!-- ============ MODAL: NEW CLIENT ============ -->
+<div class="overlay" id="modalNewClient">
+  <div class="modal">
+    <div class="modal-head">
+      <div><h3>New client / lead</h3><p>Adds a card to the pipeline at "New Lead"</p></div>
+      <button class="close-x" onclick="closeModal('modalNewClient')">✕</button>
+    </div>
+    <form id="formNewClient" onsubmit="submitNewClient(event)">
+      <div class="modal-body">
+        <div class="field-row">
+          <div class="field"><label>Business name</label><input type="text" id="nc_biz" required placeholder="e.g. Coastal Fleet Services LLC"></div>
+          <div class="field"><label>Contact name</label><input type="text" id="nc_contact" required placeholder="e.g. Maria Alvarez"></div>
+        </div>
+        <div class="field-row">
+          <div class="field"><label>Email</label><input type="email" id="nc_email" placeholder="maria@coastalfleet.com"></div>
+          <div class="field"><label>Phone</label><input type="tel" id="nc_phone" placeholder="(555) 010-2938"></div>
+        </div>
+        <div class="field-row">
+          <div class="field"><label>Industry</label>
+            <select id="nc_industry"><option>Construction / Contracting</option><option>Trucking / Freight</option><option>Food Service / Restaurant</option><option>Health &amp; Wellness</option><option>Salon / Med Spa</option><option>Auto Repair</option><option>E-commerce / Retail</option><option>Professional Services</option><option>Other</option></select>
+          </div>
+          <div class="field"><label>Funding ask</label><input type="number" id="nc_ask" placeholder="50000" min="0"></div>
+        </div>
+        <div class="field-row">
+          <div class="field"><label>Assigned rep</label><select id="nc_rep"></select></div>
+          <div class="field"><label>Lead source</label>
+            <select id="nc_source"><option>Inbound — website</option><option>Referral partner</option><option>Cold outreach</option><option>Paid ad</option><option>Reunion / network</option></select>
+          </div>
+        </div>
+      </div>
+      <div class="modal-foot">
+        <button type="button" class="btn" onclick="closeModal('modalNewClient')">Cancel</button>
+        <button type="submit" class="btn btn-primary">Add to pipeline</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ============ MODAL: NEW FUNDING RECORD ============ -->
+<div class="overlay" id="modalNewFunding">
+  <div class="modal">
+    <div class="modal-head">
+      <div><h3>New funding record</h3><p>Logs a placement against an existing client</p></div>
+      <button class="close-x" onclick="closeModal('modalNewFunding')">✕</button>
+    </div>
+    <form id="formNewFunding" onsubmit="submitNewFunding(event)">
+      <div class="modal-body">
+        <div class="field"><label>Client</label><select id="nf_client" required></select></div>
+        <div class="field-row">
+          <div class="field"><label>Funding type</label>
+            <select id="nf_type"><option>0% Business Credit Stack</option><option>SBA 7(a)</option><option>Revenue-Based Advance</option><option>Business Line of Credit</option><option>Equipment Financing</option></select>
+          </div>
+          <div class="field"><label>Lender / source</label><input type="text" id="nf_lender" placeholder="e.g. Chase Ink, Fundbox…"></div>
+        </div>
+        <div class="field-row">
+          <div class="field"><label>Amount requested</label><input type="number" id="nf_req" min="0" placeholder="60000" required></div>
+          <div class="field"><label>Amount placed <span class="hint">leave blank if pending</span></label><input type="number" id="nf_placed" min="0" placeholder="45000"></div>
+        </div>
+        <div class="field-row">
+          <div class="field"><label>Status</label>
+            <select id="nf_status"><option>Submitted</option><option>Underwriting</option><option>Approved</option><option>Funded</option><option>Declined</option></select>
+          </div>
+          <div class="field"><label>Date</label><input type="date" id="nf_date"></div>
+        </div>
+      </div>
+      <div class="modal-foot">
+        <button type="button" class="btn" onclick="closeModal('modalNewFunding')">Cancel</button>
+        <button type="submit" class="btn btn-primary">Save record</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ============ MODAL: NEW TASK ============ -->
+<div class="overlay" id="modalNewTask">
+  <div class="modal">
+    <div class="modal-head">
+      <div><h3>New task</h3><p>Assign to a pipeline role</p></div>
+      <button class="close-x" onclick="closeModal('modalNewTask')">✕</button>
+    </div>
+    <form id="formNewTask" onsubmit="submitNewTask(event)">
+      <div class="modal-body">
+        <div class="field"><label>Task</label><input type="text" id="nt_title" required placeholder="e.g. Follow up on stipulations for Coastal Fleet"></div>
+        <div class="field-row">
+          <div class="field"><label>Assigned role</label><select id="nt_role"></select></div>
+          <div class="field"><label>Priority</label><select id="nt_priority"><option>Normal</option><option>High</option><option>Urgent</option></select></div>
+        </div>
+        <div class="field-row">
+          <div class="field"><label>Due date</label><input type="date" id="nt_due"></div>
+          <div class="field"><label>Related client <span class="hint">optional</span></label><select id="nt_client"><option value="">— none —</option></select></div>
+        </div>
+      </div>
+      <div class="modal-foot">
+        <button type="button" class="btn" onclick="closeModal('modalNewTask')">Cancel</button>
+        <button type="submit" class="btn btn-primary">Create task</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ============ MODAL: NEW PARTNER ============ -->
+<div class="overlay" id="modalNewPartner">
+  <div class="modal">
+    <div class="modal-head">
+      <div><h3>Add referral partner</h3><p>Generates a unique referral link</p></div>
+      <button class="close-x" onclick="closeModal('modalNewPartner')">✕</button>
+    </div>
+    <form id="formNewPartner" onsubmit="submitNewPartner(event)">
+      <div class="modal-body">
+        <div class="field-row">
+          <div class="field"><label>Partner name</label><input type="text" id="np_name" required placeholder="e.g. Denise Cho, CPA"></div>
+          <div class="field"><label>Type</label><select id="np_type"><option>CPA</option><option>Attorney</option><option>Business Broker</option><option>Insurance Agent</option><option>Other Operator</option></select></div>
+        </div>
+        <div class="field"><label>Email</label><input type="email" id="np_email" placeholder="denise@choaccounting.com"></div>
+      </div>
+      <div class="modal-foot">
+        <button type="button" class="btn" onclick="closeModal('modalNewPartner')">Cancel</button>
+        <button type="submit" class="btn btn-primary">Add partner</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ============ CLIENT DETAIL DRAWER ============ -->
+<div class="drawer-overlay" id="clientDrawer" onclick="if(event.target===this) closeDrawer()">
+  <div class="drawer">
+    <div class="drawer-head row between" style="align-items:flex-start;">
+      <div>
+        <div id="drawerBiz" style="font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:17px;"></div>
+        <div id="drawerContact" style="font-size:12.5px;color:var(--slate);margin-top:3px;"></div>
+        <div id="drawerBadges" style="margin-top:10px;display:flex;gap:8px;"></div>
+      </div>
+      <button class="close-x" onclick="closeDrawer()">✕</button>
+    </div>
+    <div class="drawer-tabs">
+      <button class="drawer-tab active" data-pane="overview" onclick="switchDrawerTab('overview')">Overview</button>
+      <button class="drawer-tab" data-pane="funding" onclick="switchDrawerTab('funding')">Funding</button>
+      <button class="drawer-tab" data-pane="audits" onclick="switchDrawerTab('audits')">Audits</button>
+      <button class="drawer-tab" data-pane="tasks" onclick="switchDrawerTab('tasks')">Tasks</button>
+      <button class="drawer-tab" data-pane="notes" onclick="switchDrawerTab('notes')">Notes</button>
+    </div>
+    <div class="drawer-body">
+      <div class="drawer-pane active" id="pane-overview"></div>
+      <div class="drawer-pane" id="pane-funding"></div>
+      <div class="drawer-pane" id="pane-audits"></div>
+      <div class="drawer-pane" id="pane-tasks"></div>
+      <div class="drawer-pane" id="pane-notes"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ DEV NOTES MODAL ============ -->
+<div class="overlay" id="modalDevNotes">
+  <div class="modal" style="max-width:640px;">
+    <div class="modal-head">
+      <div><h3>Developer integration notes</h3><p>What's real, what's dummy, and what to wire up</p></div>
+      <button class="close-x" onclick="closeModal('modalDevNotes')">✕</button>
+    </div>
+    <div class="modal-body devnotes">
+      <p>This file is a static front-end prototype. All data lives in the <code>DUMMY_DATA</code> object at the top of the <code>&lt;script&gt;</code> block and every mutation (new client, new funding record, task checkbox, etc.) currently just updates that in-memory object and re-renders. Nothing persists on reload.</p>
+      <h4>Suggested endpoints</h4>
+      <pre>GET/POST/PATCH  /api/clients
+GET/POST/PATCH  /api/funding-records
+GET/POST/PATCH  /api/fundability-audits
+GET/POST/PATCH  /api/partners
+GET/POST/PATCH  /api/tasks
+GET             /api/activity
+GET             /api/dashboard/summary
+POST            /api/auth/login</pre>
+      <h4>Where to hook in</h4>
+      <ul>
+        <li>Every form's submit handler (<code>submitNewClient</code>, <code>submitNewFunding</code>, <code>submitNewTask</code>, <code>submitNewPartner</code>, <code>submitAudit</code>) — replace the array push with a POST, then re-render on success.</li>
+        <li>Kanban drag-to-stage is currently a dropdown-free click-to-open pattern; if you add real drag-and-drop, PATCH the client's stage on drop.</li>
+        <li>Task checkboxes call <code>toggleTask(id)</code> — swap for a PATCH.</li>
+        <li>KPI cards, funnel, and constraint charts are computed client-side in <code>renderDashboard()</code> from the same arrays — a real backend could instead expose a single <code>/api/dashboard/summary</code>.</li>
+        <li>Likely source of truth: GoHighLevel (CRM/pipeline) + Airtable (funding tracker, audits) — this UI assumes a unifying API layer in front of both.</li>
+      </ul>
+      <h4>Auth</h4>
+      <p>No auth UI is built beyond the static user chip in the top bar — add a login screen and gate the app shell behind it.</p>
+    </div>
+    <div class="modal-foot"><button class="btn btn-primary" onclick="closeModal('modalDevNotes')">Got it</button></div>
+  </div>
+</div>
+
+<div class="toast-stack" id="toastStack"></div>
+
+<script>
+/* =========================================================================
+   DUMMY DATA — replace with API calls per the Dev Notes modal in the app.
+   ========================================================================= */
+
+const STAGES = ["New Lead","Intake Scheduled","Fundability Audit","Diagnosis & Offer","Funding Application","Funded","Partner (Day 90+)","Closed Lost"];
+const BOARD_STAGES = STAGES.filter(s => s !== "Closed Lost");
+const CONSTRAINTS = ["Leads","Sales Conversion","Fulfillment / Delivery","Cash Flow","Profit Margin"];
+const REPS = [
+  {id:"r1", name:"Branden P.", role:"COO"},
+  {id:"r2", name:"Casey M.", role:"Sales Closer"},
+  {id:"r3", name:"Jordan T.", role:"Appointment Setter"},
+  {id:"r4", name:"Riley P.", role:"GHL Ops / CSM"},
+  {id:"r5", name:"Sam K.", role:"Fulfillment"},
+  {id:"r6", name:"Taylor B.", role:"EA"},
+];
+const TASK_ROLES = ["Appointment Setter","Sales Closer","GHL Ops/CSM","Fulfillment","EA","COO"];
+
+function initials(name){ return name.split(" ").map(w=>w[0]).join("").slice(0,2).toUpperCase(); }
+function repById(id){ return REPS.find(r=>r.id===id) || REPS[0]; }
+function fmtMoney(n){ if(n===null||n===undefined||n==="") return "—"; return "$"+Number(n).toLocaleString("en-US"); }
+function fmtDate(d){ if(!d) return "—"; const dt=new Date(d+"T00:00:00"); return dt.toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"}); }
+function uid(prefix){ return prefix+"_"+Math.random().toString(36).slice(2,9); }
+
+let DUMMY_DATA = {
+  clients: [
+    {id:"c1", biz:"Coastal Fleet Services LLC", contact:"Maria Alvarez", email:"maria@coastalfleet.com", phone:"(551) 204-8830", industry:"Trucking / Freight", stage:"Funding Application", constraint:"Cash Flow", ask:85000, rep:"r2", source:"Referral partner", daysInStage:6, lastActivity:"2026-08-19"},
+    {id:"c2", biz:"Union Ave Dental Group", contact:"Dr. Neil Okafor", email:"neil@unionavedental.com", phone:"(908) 555-1120", industry:"Health & Wellness", stage:"Fundability Audit", constraint:"Sales Conversion", ask:120000, rep:"r3", source:"Inbound — website", daysInStage:2, lastActivity:"2026-08-20"},
+    {id:"c3", biz:"Bergen Line Contracting", contact:"Tom Reyes", email:"tom@bergenline.com", phone:"(201) 555-7743", industry:"Construction / Contracting", stage:"Funded", constraint:"Leads", ask:60000, rep:"r2", source:"Referral partner", daysInStage:0, lastActivity:"2026-08-14"},
+    {id:"c4", biz:"Sunset Auto Repair", contact:"Vic Palmieri", email:"vic@sunsetautorepairnj.com", phone:"(732) 555-4021", industry:"Auto Repair", stage:"New Lead", constraint:"Profit Margin", ask:35000, rep:"r3", source:"Cold outreach", daysInStage:1, lastActivity:"2026-08-20"},
+    {id:"c5", biz:"Ironbound Kitchen & Catering", contact:"Luz Fernandez", email:"luz@ironboundkitchen.com", phone:"(973) 555-8890", industry:"Food Service / Restaurant", stage:"Diagnosis & Offer", constraint:"Fulfillment / Delivery", ask:45000, rep:"r2", source:"Paid ad", daysInStage:4, lastActivity:"2026-08-18"},
+    {id:"c6", biz:"Radiance Med Spa", contact:"Sophia Kim", email:"sophia@radiancemedspa.com", phone:"(609) 555-2266", industry:"Salon / Med Spa", stage:"Intake Scheduled", constraint:"Leads", ask:70000, rep:"r3", source:"Reunion / network", daysInStage:1, lastActivity:"2026-08-19"},
+    {id:"c7", biz:"Highland Grove Landscaping", contact:"Pete Marsh", email:"pete@highlandgrovelandscape.com", phone:"(973) 555-3345", industry:"Other", stage:"Partner (Day 90+)", constraint:"Cash Flow", ask:50000, rep:"r2", source:"Referral partner", daysInStage:0, lastActivity:"2026-08-11"},
+    {id:"c8", biz:"Northgate Logistics Inc.", contact:"Dana Whitfield", email:"dana@northgatelogistics.com", phone:"(856) 555-9081", industry:"Trucking / Freight", stage:"Funding Application", constraint:"Cash Flow", ask:95000, rep:"r2", source:"Inbound — website", daysInStage:9, lastActivity:"2026-08-15"},
+    {id:"c9", biz:"Willow Creek Daycare", contact:"Renee Dubois", email:"renee@willowcreekdaycare.com", phone:"(732) 555-1187", industry:"Professional Services", stage:"Funded", constraint:"Sales Conversion", ask:40000, rep:"r3", source:"Referral partner", daysInStage:0, lastActivity:"2026-08-08"},
+    {id:"c10", biz:"Vantage Point HVAC", contact:"Greg Costa", email:"greg@vantagepointhvac.com", phone:"(201) 555-6612", industry:"Construction / Contracting", stage:"New Lead", constraint:"Leads", ask:55000, rep:"r3", source:"Cold outreach", daysInStage:2, lastActivity:"2026-08-20"},
+    {id:"c11", biz:"Pinehurst Salon Studio", contact:"Angela Cruz", email:"angela@pinehurststudio.com", phone:"(609) 555-7754", industry:"Salon / Med Spa", stage:"Closed Lost", constraint:"Profit Margin", ask:25000, rep:"r3", source:"Paid ad", daysInStage:0, lastActivity:"2026-07-30"},
+  ],
+  fundingRecords: [
+    {id:"f1", clientId:"c3", type:"0% Business Credit Stack", requested:60000, placed:58000, lender:"Multi-bank stack (6 cards)", status:"Funded", date:"2026-08-14"},
+    {id:"f2", clientId:"c9", type:"Revenue-Based Advance", requested:40000, placed:38500, lender:"Fundbox", status:"Funded", date:"2026-08-08"},
+    {id:"f3", clientId:"c7", type:"Business Line of Credit", requested:50000, placed:50000, lender:"Bluevine", status:"Funded", date:"2026-05-22"},
+    {id:"f4", clientId:"c1", type:"0% Business Credit Stack", requested:85000, placed:null, lender:"Multi-bank stack (pending)", status:"Underwriting", date:"2026-08-19"},
+    {id:"f5", clientId:"c8", type:"SBA 7(a)", requested:95000, placed:null, lender:"Velocity SBA", status:"Submitted", date:"2026-08-15"},
+    {id:"f6", clientId:"c5", type:"Equipment Financing", requested:45000, placed:null, lender:"Crest Capital", status:"Approved", date:"2026-08-18"},
+    {id:"f7", clientId:"c11", type:"Business Line of Credit", requested:25000, placed:null, lender:"Bluevine", status:"Declined", date:"2026-07-29"},
+  ],
+  audits: [
+    {id:"a1", clientId:"c2", date:"2026-08-20", score:74, constraint:"Sales Conversion", notes:"Strong lead flow, appointments booked but close rate under 20%. Needs a sales process, not more leads."},
+    {id:"a2", clientId:"c6", date:"2026-08-19", score:61, constraint:"Leads", notes:"Excellent service delivery and retention, but outbound/inbound lead gen is nearly nonexistent."},
+    {id:"a3", clientId:"c5", date:"2026-08-18", score:55, constraint:"Fulfillment / Delivery", notes:"Catering demand exceeds current kitchen capacity — losing bookings during peak weeks."},
+  ],
+  partners: [
+    {id:"p1", name:"Denise Cho, CPA", type:"CPA", email:"denise@choaccounting.com", referralsSent:9, referralsFunded:5, payoutOwed:2450, payoutPaid:6100, link:"pwg.link/r/dcho"},
+    {id:"p2", name:"Marcus Ibe, Esq.", type:"Attorney", email:"marcus@ibelawnj.com", referralsSent:4, referralsFunded:2, payoutOwed:980, payoutPaid:1200, link:"pwg.link/r/mibe"},
+    {id:"p3", name:"Priya Nathan — Nathan Insurance", type:"Insurance Agent", email:"priya@nathaninsurance.com", referralsSent:6, referralsFunded:3, payoutOwed:0, payoutPaid:2650, link:"pwg.link/r/pnathan"},
+    {id:"p4", name:"Our Lady of Mt. Carmel Alumni Network", type:"Other Operator", email:"reunion@olmc-alumni.org", referralsSent:3, referralsFunded:1, payoutOwed:450, payoutPaid:0, link:"pwg.link/r/olmc"},
+  ],
+  tasks: [
+    {id:"t1", title:"Send stipulation checklist to Coastal Fleet Services", role:"GHL Ops/CSM", assignee:"Riley P.", due:"2026-08-21", priority:"Urgent", status:"open", clientId:"c1"},
+    {id:"t2", title:"Book fundability audit call with Vantage Point HVAC", role:"Appointment Setter", assignee:"Jordan T.", due:"2026-08-22", priority:"High", status:"open", clientId:"c10"},
+    {id:"t3", title:"Prep offer stack presentation for Ironbound Kitchen", role:"Sales Closer", assignee:"Casey M.", due:"2026-08-21", priority:"High", status:"open", clientId:"c5"},
+    {id:"t4", title:"Confirm Day-90 partner subscription billing for Highland Grove", role:"COO", assignee:"Branden P.", due:"2026-08-23", priority:"Normal", status:"open", clientId:"c7"},
+    {id:"t5", title:"Upload signed service agreement — Union Ave Dental", role:"Fulfillment", assignee:"Sam K.", due:"2026-08-22", priority:"Normal", status:"open", clientId:"c2"},
+    {id:"t6", title:"Send referral payout — Denise Cho, CPA", role:"EA", assignee:"Taylor B.", due:"2026-08-25", priority:"Normal", status:"open", clientId:null},
+    {id:"t7", title:"Follow up: Sunset Auto Repair discovery call recap", role:"Sales Closer", assignee:"Casey M.", due:"2026-08-21", priority:"High", status:"open", clientId:"c4"},
+    {id:"t8", title:"QA new sales closer certification quiz bank", role:"COO", assignee:"Branden P.", due:"2026-08-26", priority:"Normal", status:"open", clientId:null},
+    {id:"t9", title:"Log Northgate Logistics SBA submission in tracker", role:"GHL Ops/CSM", assignee:"Riley P.", due:"2026-08-16", priority:"Normal", status:"done", clientId:"c8"},
+    {id:"t10", title:"Send welcome sequence — Bergen Line Contracting", role:"Fulfillment", assignee:"Sam K.", due:"2026-08-15", priority:"Normal", status:"done", clientId:"c3"},
+  ],
+  activity: [
+    {id:"e1", ts:"2h ago", text:"Northgate Logistics Inc. moved to Funding Application", type:"pipeline"},
+    {id:"e2", ts:"4h ago", text:"Fundability audit completed for Union Ave Dental Group — score 74", type:"audit"},
+    {id:"e3", ts:"Yesterday", text:"Funding placed: Willow Creek Daycare — $38,500 via Fundbox", type:"funding"},
+    {id:"e4", ts:"Yesterday", text:"New lead: Vantage Point HVAC (cold outreach)", type:"pipeline"},
+    {id:"e5", ts:"2 days ago", text:"Referral payout sent to Priya Nathan — $650", type:"partner"},
+    {id:"e6", ts:"3 days ago", text:"Bergen Line Contracting funded — $58,000 via 6-card stack", type:"funding"},
+  ],
+};
+
+const CHECKLIST_ITEMS = [
+  "EIN verified against IRS records",
+  "Business bank account open 6+ months",
+  "No NSFs in trailing 3 months",
+  "Business address matches registration",
+  "Entity in good standing with Secretary of State",
+];
+
+let state = { drawerClientId:null, fundingSort:{key:"date", dir:"desc"}, activeTaskRole:"All" };
+
+/* =========================================================================
+   INIT
+   ========================================================================= */
+document.addEventListener("DOMContentLoaded", () => {
+  populateSelects();
+  renderAll();
+  wireNav();
+  document.getElementById("globalSearch").addEventListener("input", handleGlobalSearch);
+});
+
+function wireNav(){
+  document.querySelectorAll(".nav-item[data-view]").forEach(btn=>{
+    btn.addEventListener("click", ()=> switchView(btn.dataset.view));
+  });
+  document.querySelectorAll("[data-view-link]").forEach(btn=>{
+    btn.addEventListener("click", ()=> switchView(btn.dataset.viewLink));
+  });
+}
+
+const VIEW_META = {
+  dashboard:{ title:"Dashboard", sub:"Portfolio overview & constraint diagnostics" },
+  pipeline:{ title:"Client Pipeline", sub:"Every active deal, by stage" },
+  funding:{ title:"Funding Tracker", sub:"Placements, fees, and lender status" },
+  audit:{ title:"Fundability Audits", sub:"Diagnose the constraint before you fund it" },
+  clients:{ title:"Clients", sub:"Full client directory" },
+  partners:{ title:"Referral Partners", sub:"Sources, payouts, and referral links" },
+  tasks:{ title:"Tasks", sub:"Everything open across the team" },
+  reports:{ title:"Reports", sub:"Portfolio trends" },
+  settings:{ title:"Settings", sub:"Team, offer stack, and integrations" },
+};
+
+function switchView(name){
+  document.querySelectorAll(".view").forEach(v=>v.classList.remove("active"));
+  document.getElementById("view-"+name).classList.add("active");
+  document.querySelectorAll(".nav-item[data-view]").forEach(b=>b.classList.toggle("active", b.dataset.view===name));
+  document.getElementById("pageTitle").textContent = VIEW_META[name].title;
+  document.getElementById("pageSub").textContent = VIEW_META[name].sub;
+  window.scrollTo({top:0, behavior:"smooth"});
+}
+
+function renderAll(){
+  renderNavCounts();
+  renderDashboard();
+  renderPipeline();
+  renderFunding();
+  renderAuditView();
+  renderClients();
+  renderPartners();
+  renderTasks();
+  renderReports();
+  renderSettings();
+}
+
+function renderNavCounts(){
+  document.getElementById("navCountPipeline").textContent = DUMMY_DATA.clients.filter(c=>c.stage!=="Closed Lost").length;
+  document.getElementById("navCountTasks").textContent = DUMMY_DATA.tasks.filter(t=>t.status==="open").length;
+}
+
+/* =========================================================================
+   DASHBOARD
+   ========================================================================= */
+function renderDashboard(){
+  const clients = DUMMY_DATA.clients;
+  const active = clients.filter(c=>c.stage!=="Closed Lost");
+  const funded = DUMMY_DATA.fundingRecords.filter(f=>f.status==="Funded");
+  const placedTotal = funded.reduce((s,f)=>s+(f.placed||0),0);
+  const pipelineValue = clients.filter(c=>!["Funded","Partner (Day 90+)","Closed Lost"].includes(c.stage)).reduce((s,c)=>s+c.ask,0);
+  const conversion = Math.round((funded.length / clients.length) * 100);
+  const payoutsDue = DUMMY_DATA.partners.reduce((s,p)=>s+p.payoutOwed,0);
+  const feesEarned = funded.reduce((s,f)=>s+Math.round((f.placed||0)*0.10),0);
+
+  const kpis = [
+    {label:"Active clients", value:active.length, delta:"+3 this week", dir:"up"},
+    {label:"Funding placed (total)", value:fmtMoney(placedTotal), delta:"+"+fmtMoney(38500)+" this wk", dir:"up"},
+    {label:"Pipeline value", value:fmtMoney(pipelineValue), delta:"6 open deals", dir:"flat"},
+    {label:"Success fees earned", value:fmtMoney(feesEarned), delta:"10% of placed", dir:"up"},
+    {label:"Conversion rate", value:conversion+"%", delta:"lead → funded", dir:"flat"},
+    {label:"Referral payouts due", value:fmtMoney(payoutsDue), delta:"4 partners", dir:"down"},
+  ];
+  document.getElementById("kpiGrid").innerHTML = kpis.map(k=>`
+    <div class="card kpi">
+      <div class="label">${k.label}</div>
+      <div class="value num">${k.value}</div>
+      <div class="delta ${k.dir}">${arrowFor(k.dir)} ${k.delta}</div>
+    </div>`).join("");
+
+  // funnel
+  document.getElementById("funnelChart").innerHTML = renderFunnelBars(BOARD_STAGES, clients);
+
+  // constraint mix
+  document.getElementById("constraintChart").innerHTML = renderConstraintMix(active);
+
+  // upcoming tasks
+  const upcoming = DUMMY_DATA.tasks.filter(t=>t.status==="open").sort((a,b)=>a.due.localeCompare(b.due)).slice(0,5);
+  document.getElementById("dashTaskList").innerHTML = upcoming.map(taskRowMini).join("") || emptyState("No open tasks","You're all caught up.");
+
+  // activity
+  document.getElementById("activityFeed").innerHTML = DUMMY_DATA.activity.map(a=>`
+    <div class="activity-item">
+      <div class="activity-dot"></div>
+      <div>
+        <div class="txt">${a.text}</div>
+        <div class="ts">${a.ts}</div>
+      </div>
+    </div>`).join("");
+}
+
+function arrowFor(dir){ return dir==="up" ? "▲" : dir==="down" ? "▼" : "•"; }
+
+function renderFunnelBars(stages, clients){
+  const max = Math.max(...stages.map(s=>clients.filter(c=>c.stage===s).length), 1);
+  return stages.map(s=>{
+    const list = clients.filter(c=>c.stage===s);
+    const count = list.length;
+    const value = list.reduce((sum,c)=>sum+c.ask,0);
+    const pct = Math.round((count/max)*100);
+    return `<div style="margin-bottom:12px;">
+      <div class="row between" style="font-size:12px;margin-bottom:5px;">
+        <span style="font-weight:600;">${s}</span>
+        <span class="num" style="color:var(--slate);">${count} deals · ${fmtMoney(value)}</span>
+      </div>
+      <div style="height:9px;background:var(--border-soft);border-radius:5px;overflow:hidden;">
+        <div style="height:100%;width:${Math.max(pct,4)}%;background:linear-gradient(90deg,var(--sky-500),var(--navy-600));border-radius:5px;"></div>
+      </div>
+    </div>`;
+  }).join("");
+}
+
+function renderConstraintMix(clients){
+  return CONSTRAINTS.map(con=>{
+    const list = clients.filter(c=>c.constraint===con);
+    const pct = clients.length ? Math.round((list.length/clients.length)*100) : 0;
+    return `<div>
+      <div class="row between" style="font-size:12.5px;margin-bottom:6px;">
+        <span style="font-weight:600;">${con}</span>
+        <span class="cell-sub num">${list.length} clients · ${pct}%</span>
+      </div>
+      ${constraintMeterHtml(con, false)}
+    </div>`;
+  }).join("");
+}
+
+function constraintMeterHtml(activeConstraint){
+  return `<div class="cm-track">${CONSTRAINTS.map(c=>`<div class="cm-seg ${c===activeConstraint?'active':''}"></div>`).join("")}</div>`;
+}
+
+/* =========================================================================
+   PIPELINE (Kanban)
+   ========================================================================= */
+function renderPipeline(){
+  const q = (document.getElementById("pipelineSearch").value||"").toLowerCase();
+  const repFilter = document.getElementById("pipelineRepFilter").value;
+  const conFilter = document.getElementById("pipelineConstraintFilter").value;
+  const showClosed = document.getElementById("showClosedLost").checked;
+  const stages = showClosed ? STAGES : BOARD_STAGES;
+
+  const filtered = DUMMY_DATA.clients.filter(c=>{
+    if(q && !(c.biz.toLowerCase().includes(q) || c.contact.toLowerCase().includes(q))) return false;
+    if(repFilter && c.rep!==repFilter) return false;
+    if(conFilter && c.constraint!==conFilter) return false;
+    return true;
+  });
+
+  document.getElementById("kanbanBoard").innerHTML = stages.map(stage=>{
+    const cards = filtered.filter(c=>c.stage===stage);
+    const value = cards.reduce((s,c)=>s+c.ask,0);
+    return `<div class="kanban-col">
+      <div class="kanban-col-head">
+        <div class="title"><span>${stage}</span><span class="num" style="color:var(--slate);font-weight:600;">${cards.length}</span></div>
+        <div class="meta">${fmtMoney(value)} total</div>
+      </div>
+      <div class="kanban-col-body">
+        ${cards.map(c=>kanbanCardHtml(c)).join("") || ""}
+      </div>
+      ${stage!=="Closed Lost" ? `<button class="kanban-add" onclick="openModal('modalNewClient')">+ Add card</button>` : ""}
+    </div>`;
+  }).join("");
+}
+
+function kanbanCardHtml(c){
+  const rep = repById(c.rep);
+  return `<div class="kanban-card" onclick="openDrawer('${c.id}')">
+    <div class="biz">${c.biz}</div>
+    <div class="contact">${c.contact} · ${c.industry}</div>
+    <div class="cm-mini"><span class="dot"></span>${c.constraint}</div>
+    <div class="foot">
+      <span class="ask">${fmtMoney(c.ask)}</span>
+      <span class="rep-avatar" title="${rep.name}">${initials(rep.name)}</span>
+    </div>
+  </div>`;
+}
+
+/* =========================================================================
+   FUNDING TRACKER
+   ========================================================================= */
+function renderFunding(){
+  const q = (document.getElementById("fundingSearch").value||"").toLowerCase();
+  const statusFilter = document.getElementById("fundingStatusFilter").value;
+
+  let rows = DUMMY_DATA.fundingRecords.map(f=>({...f, client: DUMMY_DATA.clients.find(c=>c.id===f.clientId)}));
+  rows = rows.filter(r=>{
+    if(q && !((r.client?.biz||"").toLowerCase().includes(q) || (r.lender||"").toLowerCase().includes(q))) return false;
+    if(statusFilter && r.status!==statusFilter) return false;
+    return true;
+  });
+
+  const {key,dir} = state.fundingSort;
+  rows.sort((a,b)=>{
+    let av,bv;
+    switch(key){
+      case "client": av=a.client?.biz||""; bv=b.client?.biz||""; break;
+      case "type": av=a.type; bv=b.type; break;
+      case "requested": av=a.requested; bv=b.requested; break;
+      case "placed": av=a.placed||0; bv=b.placed||0; break;
+      case "lender": av=a.lender; bv=b.lender; break;
+      case "fee": av=Math.round((a.placed||0)*0.1); bv=Math.round((b.placed||0)*0.1); break;
+      case "status": av=a.status; bv=b.status; break;
+      default: av=a.date; bv=b.date;
+    }
+    if(typeof av==="string") return dir==="asc" ? av.localeCompare(bv) : bv.localeCompare(av);
+    return dir==="asc" ? av-bv : bv-av;
+  });
+
+  document.getElementById("fundingTableBody").innerHTML = rows.map(r=>`
+    <tr class="clickable" onclick="openDrawer('${r.clientId}')">
+      <td><div class="cell-primary">${r.client?.biz||"—"}</div><div class="cell-sub">${r.client?.contact||""}</div></td>
+      <td>${r.type}</td>
+      <td class="num">${fmtMoney(r.requested)}</td>
+      <td class="num">${fmtMoney(r.placed)}</td>
+      <td>${r.lender}</td>
+      <td class="num">${fmtMoney(r.placed ? Math.round(r.placed*0.10) : null)}</td>
+      <td>${fundingStatusBadge(r.status)}</td>
+      <td class="num">${fmtDate(r.date)}</td>
+    </tr>`).join("") || `<tr><td colspan="8">${emptyState("No matching funding records","Try adjusting your filters.")}</td></tr>`;
+
+  const totalReq = rows.reduce((s,r)=>s+r.requested,0);
+  const totalPlaced = rows.reduce((s,r)=>s+(r.placed||0),0);
+  const totalFee = rows.reduce((s,r)=>s+(r.placed?Math.round(r.placed*0.10):0),0);
+  document.getElementById("fundingTableFoot").innerHTML = `
+    <tr class="table-summary">
+      <td>Totals (${rows.length})</td><td></td>
+      <td class="num">${fmtMoney(totalReq)}</td>
+      <td class="num">${fmtMoney(totalPlaced)}</td>
+      <td></td><td class="num">${fmtMoney(totalFee)}</td><td></td><td></td>
+    </tr>`;
+}
+
+function sortFunding(key){
+  if(state.fundingSort.key===key){ state.fundingSort.dir = state.fundingSort.dir==="asc"?"desc":"asc"; }
+  else { state.fundingSort = {key, dir:"asc"}; }
+  renderFunding();
+}
+
+function fundingStatusBadge(status){
+  const map = { Submitted:"badge-blue", Underwriting:"badge-amber", Approved:"badge-violet", Funded:"badge-green", Declined:"badge-red" };
+  return `<span class="badge ${map[status]||'badge-slate'}"><span class="badge-dot" style="background:currentColor;"></span>${status}</span>`;
+}
+
+/* =========================================================================
+   FUNDABILITY AUDIT
+   ========================================================================= */
+function renderAuditView(){
+  document.getElementById("constraintPills").innerHTML = CONSTRAINTS.map((c,i)=>`
+    <label class="radio-pill"><input type="radio" name="af_constraint" value="${c}" ${i===0?"checked":""}><span>${c}</span></label>`).join("");
+  document.getElementById("readinessChecklist").innerHTML = CHECKLIST_ITEMS.map((item,i)=>`
+    <label><input type="checkbox" id="chk_${i}" checked> ${item}</label>`).join("");
+  renderAuditList();
+}
+
+function renderAuditList(){
+  const sorted = [...DUMMY_DATA.audits].sort((a,b)=>b.date.localeCompare(a.date));
+  document.getElementById("auditList").innerHTML = sorted.map(a=>{
+    const client = DUMMY_DATA.clients.find(c=>c.id===a.clientId);
+    return `<div class="audit-item clickable" onclick="openDrawer('${a.clientId}')">
+      ${scoreRingHtml(a.score)}
+      <div class="info">
+        <div class="biz">${client?.biz||"Unknown business"}</div>
+        <div class="meta">${fmtDate(a.date)} · Constraint: <b>${a.constraint}</b></div>
+        <div class="cell-sub" style="margin-top:4px;">${a.notes}</div>
+      </div>
+    </div>`;
+  }).join("") || emptyState("No audits yet","Run your first fundability audit using the form.");
+}
+
+function scoreRingHtml(score){
+  const r = 28, c = 2*Math.PI*r;
+  const color = score>=70 ? "var(--green-600)" : score>=45 ? "var(--amber-600)" : "var(--red-600)";
+  const dash = (score/100)*c;
+  return `<div class="score-ring">
+    <svg viewBox="0 0 74 74">
+      <circle class="bg" cx="37" cy="37" r="${r}"></circle>
+      <circle class="fg" cx="37" cy="37" r="${r}" stroke="${color}" stroke-dasharray="${dash} ${c}"></circle>
+    </svg>
+    <div class="val">${score}</div>
+  </div>`;
+}
+
+function submitAudit(ev){
+  ev.preventDefault();
+  const bizname = document.getElementById("af_bizname").value;
+  const tib = Number(document.getElementById("af_tib").value)||0;
+  const rev = Number(document.getElementById("af_rev").value)||0;
+  const bizcredit = Number(document.getElementById("af_bizcredit").value)||50;
+  const perscredit = document.getElementById("af_perscredit").value;
+  const constraint = document.querySelector('input[name="af_constraint"]:checked').value;
+  const notes = document.getElementById("af_notes").value || "No notes provided.";
+  const checksTotal = CHECKLIST_ITEMS.length;
+  const checksMet = CHECKLIST_ITEMS.filter((_,i)=>document.getElementById("chk_"+i).checked).length;
+
+  // simple dummy scoring heuristic — replace with real underwriting logic server-side
+  let score = 30;
+  score += Math.min(tib, 36) / 36 * 15;
+  score += Math.min(rev, 100000) / 100000 * 20;
+  score += (bizcredit/100) * 15;
+  score += perscredit==="720+" ? 15 : perscredit==="680–719" ? 11 : perscredit==="620–679" ? 6 : 2;
+  score += (checksMet/checksTotal) * 15;
+  score = Math.max(5, Math.min(99, Math.round(score)));
+
+  // create a placeholder client if the business name isn't in the system yet
+  let client = DUMMY_DATA.clients.find(c=>c.biz.toLowerCase()===bizname.toLowerCase());
+  if(!client){
+    client = {id:uid("c"), biz:bizname, contact:"—", email:"", phone:"", industry:document.getElementById("af_industry").value, stage:"Fundability Audit", constraint, ask:Math.round(rev*1.5), rep:"r1", source:"Fundability audit", daysInStage:0, lastActivity: new Date().toISOString().slice(0,10)};
+    DUMMY_DATA.clients.push(client);
+  }
+
+  DUMMY_DATA.audits.unshift({id:uid("a"), clientId:client.id, date:new Date().toISOString().slice(0,10), score, constraint, notes});
+  document.getElementById("auditForm").reset();
+  renderAuditView(); renderAll();
+  toast(`Audit saved — ${bizname} scored ${score}`, "check");
+}
+
+/* =========================================================================
+   CLIENTS DIRECTORY
+   ========================================================================= */
+function renderClients(){
+  const q = (document.getElementById("clientsSearch").value||"").toLowerCase();
+  const stageFilter = document.getElementById("clientsStageFilter").value;
+  let rows = DUMMY_DATA.clients.filter(c=>{
+    if(q && !(c.biz.toLowerCase().includes(q) || c.contact.toLowerCase().includes(q))) return false;
+    if(stageFilter && c.stage!==stageFilter) return false;
+    return true;
+  });
+  document.getElementById("clientsTableBody").innerHTML = rows.map(c=>{
+    const placed = DUMMY_DATA.fundingRecords.filter(f=>f.clientId===c.id && f.status==="Funded").reduce((s,f)=>s+(f.placed||0),0);
+    return `<tr class="clickable" onclick="openDrawer('${c.id}')">
+      <td><div class="cell-primary">${c.biz}</div><div class="cell-sub">${c.industry}</div></td>
+      <td>${c.contact}</td>
+      <td>${stageBadge(c.stage)}</td>
+      <td><span class="cm-mini"><span class="dot"></span>${c.constraint}</span></td>
+      <td class="num">${placed?fmtMoney(placed):"—"}</td>
+      <td>${repById(c.rep).name}</td>
+      <td class="cell-sub">${fmtDate(c.lastActivity)}</td>
+    </tr>`;
+  }).join("") || `<tr><td colspan="7">${emptyState("No clients match","Try a different search or filter.")}</td></tr>`;
+}
+
+function stageBadge(stage){
+  const map = {
+    "New Lead":"badge-slate","Intake Scheduled":"badge-blue","Fundability Audit":"badge-blue",
+    "Diagnosis & Offer":"badge-violet","Funding Application":"badge-amber","Funded":"badge-green",
+    "Partner (Day 90+)":"badge-green","Closed Lost":"badge-red"
+  };
+  return `<span class="badge ${map[stage]||'badge-slate'}">${stage}</span>`;
+}
+
+/* =========================================================================
+   PARTNERS
+   ========================================================================= */
+function renderPartners(){
+  const totalOwed = DUMMY_DATA.partners.reduce((s,p)=>s+p.payoutOwed,0);
+  const totalPaid = DUMMY_DATA.partners.reduce((s,p)=>s+p.payoutPaid,0);
+  const totalSent = DUMMY_DATA.partners.reduce((s,p)=>s+p.referralsSent,0);
+  const totalFunded = DUMMY_DATA.partners.reduce((s,p)=>s+p.referralsFunded,0);
+  document.getElementById("partnerKpis").innerHTML = [
+    {l:"Referrals sent", v:totalSent}, {l:"Referrals funded", v:totalFunded},
+    {l:"Payouts owed", v:fmtMoney(totalOwed)}, {l:"Payouts paid (lifetime)", v:fmtMoney(totalPaid)},
+  ].map(k=>`<div class="card kpi"><div class="label">${k.l}</div><div class="value num">${k.v}</div></div>`).join("");
+
+  document.getElementById("partnersTableBody").innerHTML = DUMMY_DATA.partners.map(p=>`
+    <tr>
+      <td><div class="cell-primary">${p.name}</div><div class="cell-sub">${p.email}</div></td>
+      <td><span class="badge badge-slate">${p.type}</span></td>
+      <td class="num">${p.referralsSent}</td>
+      <td class="num">${p.referralsFunded}</td>
+      <td class="num">${fmtMoney(p.payoutOwed)}</td>
+      <td class="num">${fmtMoney(p.payoutPaid)}</td>
+      <td><a href="#" onclick="event.preventDefault(); copyLink('${p.link}')" style="color:var(--sky-600);font-family:'IBM Plex Mono',monospace;font-size:12px;">${p.link}</a></td>
+      <td><button class="btn btn-sm" ${p.payoutOwed===0?"disabled":""} onclick="markPaid('${p.id}')">Mark paid</button></td>
+    </tr>`).join("");
+}
+
+function markPaid(id){
+  const p = DUMMY_DATA.partners.find(x=>x.id===id);
+  if(!p || p.payoutOwed===0) return;
+  p.payoutPaid += p.payoutOwed;
+  toast(`Marked ${fmtMoney(p.payoutOwed)} as paid to ${p.name}`, "check");
+  p.payoutOwed = 0;
+  renderPartners();
+}
+function copyLink(link){ toast("Referral link copied: "+link, "link"); }
+
+/* =========================================================================
+   TASKS
+   ========================================================================= */
+function renderTasks(){
+  document.getElementById("roleChips").innerHTML = ["All", ...TASK_ROLES].map(r=>`
+    <button class="chip ${state.activeTaskRole===r?'active':''}" onclick="setTaskRole('${r}')">${r}</button>`).join("");
+
+  let rows = DUMMY_DATA.tasks;
+  if(state.activeTaskRole!=="All") rows = rows.filter(t=>t.role===state.activeTaskRole);
+  rows = [...rows].sort((a,b)=> (a.status===b.status ? a.due.localeCompare(b.due) : a.status==="open"?-1:1));
+
+  document.getElementById("taskListFull").innerHTML = rows.map(t=>taskRowFull(t)).join("") || `<div class="card-pad">${emptyState("No tasks here","Nothing assigned to this role yet.")}</div>`;
+}
+function setTaskRole(r){ state.activeTaskRole=r; renderTasks(); }
+
+function taskRowMini(t){
+  return `<label style="display:flex;align-items:flex-start;gap:9px;padding:8px 0;border-bottom:1px solid var(--border-soft);cursor:pointer;">
+    <input type="checkbox" style="margin-top:3px;" onchange="toggleTask('${t.id}')">
+    <div style="flex:1;min-width:0;">
+      <div style="font-size:12.5px;font-weight:500;">${t.title}</div>
+      <div class="cell-sub">${t.assignee} · due ${fmtDate(t.due)}</div>
+    </div>
+    ${priorityBadge(t.priority)}
+  </label>`;
+}
+function taskRowFull(t){
+  const done = t.status==="done";
+  return `<div style="display:flex;align-items:flex-start;gap:12px;padding:14px 20px;border-bottom:1px solid var(--border-soft);">
+    <input type="checkbox" ${done?"checked":""} style="margin-top:3px;width:16px;height:16px;" onchange="toggleTask('${t.id}')">
+    <div style="flex:1;min-width:0;">
+      <div style="font-size:13.5px;font-weight:600;${done?'text-decoration:line-through;color:var(--slate-light);':''}">${t.title}</div>
+      <div class="cell-sub" style="margin-top:3px;">${t.role} · ${t.assignee} · due ${fmtDate(t.due)}${t.clientId?" · "+ (DUMMY_DATA.clients.find(c=>c.id===t.clientId)?.biz||"") :""}</div>
+    </div>
+    ${priorityBadge(t.priority)}
+  </div>`;
+}
+function priorityBadge(p){
+  const map = {Urgent:"badge-red", High:"badge-amber", Normal:"badge-slate"};
+  return `<span class="badge ${map[p]}">${p}</span>`;
+}
+function toggleTask(id){
+  const t = DUMMY_DATA.tasks.find(x=>x.id===id);
+  if(!t) return;
+  t.status = t.status==="open" ? "done" : "open";
+  renderTasks(); renderDashboard(); renderNavCounts();
+  toast(t.status==="done" ? "Task marked complete" : "Task reopened", "check");
+}
+
+/* =========================================================================
+   REPORTS
+   ========================================================================= */
+function renderReports(){
+  const months = [
+    {m:"Mar", v:62000},{m:"Apr", v:74000},{m:"May", v:81500},
+    {m:"Jun", v:69000},{m:"Jul", v:96500},{m:"Aug", v:96500},
+  ];
+  const max = Math.max(...months.map(m=>m.v));
+  document.getElementById("reportBarChart").innerHTML = `
+    <div style="display:flex;align-items:flex-end;gap:14px;height:180px;padding-top:10px;">
+      ${months.map(m=>`
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:8px;">
+          <div class="num" style="font-size:11px;color:var(--slate);">${(m.v/1000).toFixed(0)}k</div>
+          <div style="width:100%;background:linear-gradient(180deg,var(--sky-500),var(--navy-700));border-radius:6px 6px 3px 3px;height:${(m.v/max)*130}px;"></div>
+          <div style="font-size:11.5px;color:var(--slate);font-weight:600;">${m.m}</div>
+        </div>`).join("")}
+    </div>`;
+
+  document.getElementById("reportFunnel2").innerHTML = renderFunnelBars(BOARD_STAGES, DUMMY_DATA.clients);
+  document.getElementById("reportConstraint").innerHTML = renderConstraintMix(DUMMY_DATA.clients.filter(c=>c.stage!=="Closed Lost"));
+}
+
+/* =========================================================================
+   SETTINGS
+   ========================================================================= */
+function renderSettings(){
+  document.getElementById("teamList").innerHTML = REPS.map(r=>`
+    <div class="settings-row">
+      <div class="row gap12"><div class="avatar" style="background:var(--sky-500);">${initials(r.name)}</div><div class="l"><div class="t">${r.name}</div><div class="d">${r.role}</div></div></div>
+      <span class="badge badge-slate">Active</span>
+    </div>`).join("");
+
+  const integrations = [
+    {name:"GoHighLevel", desc:"Primary CRM & pipeline automation", connected:true},
+    {name:"Airtable", desc:"Funding tracker & audit data store", connected:true},
+    {name:"Zapier / n8n", desc:"Cross-platform automation", connected:true},
+    {name:"Synthesia", desc:"Sales closer certification training", connected:false},
+    {name:"Denefits", desc:"Payment plans for high-ticket clients", connected:false},
+  ];
+  document.getElementById("integrationsList").innerHTML = integrations.map(i=>`
+    <div class="settings-row">
+      <div class="l"><div class="t">${i.name}</div><div class="d">${i.desc}</div></div>
+      <button class="toggle ${i.connected?'on':''}" onclick="this.classList.toggle('on'); toast(this.classList.contains('on')?'${i.name} connected':'${i.name} disconnected','check')"><span class="knob"></span></button>
+    </div>`).join("");
+}
+
+/* =========================================================================
+   SELECT POPULATION
+   ========================================================================= */
+function populateSelects(){
+  const repOptions = REPS.map(r=>`<option value="${r.id}">${r.name} — ${r.role}</option>`).join("");
+  ["nc_rep"].forEach(id=> document.getElementById(id).innerHTML = repOptions);
+
+  document.getElementById("pipelineRepFilter").innerHTML += REPS.map(r=>`<option value="${r.id}">${r.name}</option>`).join("");
+  document.getElementById("pipelineConstraintFilter").innerHTML += CONSTRAINTS.map(c=>`<option>${c}</option>`).join("");
+  document.getElementById("clientsStageFilter").innerHTML += STAGES.map(s=>`<option>${s}</option>`).join("");
+  document.getElementById("nt_role").innerHTML = TASK_ROLES.map(r=>`<option>${r}</option>`).join("");
+
+  refreshClientSelects();
+}
+function refreshClientSelects(){
+  const opts = DUMMY_DATA.clients.map(c=>`<option value="${c.id}">${c.biz}</option>`).join("");
+  document.getElementById("nf_client").innerHTML = opts;
+  document.getElementById("nt_client").innerHTML = `<option value="">— none —</option>` + opts;
+}
+
+/* =========================================================================
+   FORM SUBMIT HANDLERS
+   ========================================================================= */
+function submitNewClient(ev){
+  ev.preventDefault();
+  const c = {
+    id: uid("c"),
+    biz: document.getElementById("nc_biz").value,
+    contact: document.getElementById("nc_contact").value,
+    email: document.getElementById("nc_email").value,
+    phone: document.getElementById("nc_phone").value,
+    industry: document.getElementById("nc_industry").value,
+    stage: "New Lead",
+    constraint: CONSTRAINTS[0],
+    ask: Number(document.getElementById("nc_ask").value)||0,
+    rep: document.getElementById("nc_rep").value,
+    source: document.getElementById("nc_source").value,
+    daysInStage: 0,
+    lastActivity: new Date().toISOString().slice(0,10),
+  };
+  DUMMY_DATA.clients.push(c);
+  DUMMY_DATA.activity.unshift({id:uid("e"), ts:"Just now", text:`New lead: ${c.biz} (${c.source})`, type:"pipeline"});
+  ev.target.reset();
+  closeModal("modalNewClient");
+  refreshClientSelects();
+  renderAll();
+  toast(`${c.biz} added to pipeline`, "check");
+}
+
+function submitNewFunding(ev){
+  ev.preventDefault();
+  const clientId = document.getElementById("nf_client").value;
+  const f = {
+    id: uid("f"), clientId,
+    type: document.getElementById("nf_type").value,
+    requested: Number(document.getElementById("nf_req").value)||0,
+    placed: document.getElementById("nf_placed").value ? Number(document.getElementById("nf_placed").value) : null,
+    lender: document.getElementById("nf_lender").value || "—",
+    status: document.getElementById("nf_status").value,
+    date: document.getElementById("nf_date").value || new Date().toISOString().slice(0,10),
+  };
+  DUMMY_DATA.fundingRecords.push(f);
+  const client = DUMMY_DATA.clients.find(c=>c.id===clientId);
+  if(client && f.status==="Funded") client.stage = "Funded";
+  ev.target.reset();
+  closeModal("modalNewFunding");
+  renderAll();
+  toast(`Funding record saved for ${client?.biz||"client"}`, "check");
+}
+
+function submitNewTask(ev){
+  ev.preventDefault();
+  const t = {
+    id: uid("t"),
+    title: document.getElementById("nt_title").value,
+    role: document.getElementById("nt_role").value,
+    assignee: REPS.find(r=>r.role===document.getElementById("nt_role").value)?.name || "Unassigned",
+    due: document.getElementById("nt_due").value || new Date().toISOString().slice(0,10),
+    priority: document.getElementById("nt_priority").value,
+    status: "open",
+    clientId: document.getElementById("nt_client").value || null,
+  };
+  DUMMY_DATA.tasks.unshift(t);
+  ev.target.reset();
+  closeModal("modalNewTask");
+  renderAll();
+  toast("Task created", "check");
+}
+
+function submitNewPartner(ev){
+  ev.preventDefault();
+  const name = document.getElementById("np_name").value;
+  const p = {
+    id: uid("p"), name,
+    type: document.getElementById("np_type").value,
+    email: document.getElementById("np_email").value,
+    referralsSent:0, referralsFunded:0, payoutOwed:0, payoutPaid:0,
+    link: "pwg.link/r/" + name.toLowerCase().replace(/[^a-z]/g,"").slice(0,8),
+  };
+  DUMMY_DATA.partners.push(p);
+  ev.target.reset();
+  closeModal("modalNewPartner");
+  renderPartners();
+  toast(`${name} added as a referral partner`, "check");
+}
+
+/* =========================================================================
+   DRAWER (client detail)
+   ========================================================================= */
+function openDrawer(clientId){
+  state.drawerClientId = clientId;
+  const c = DUMMY_DATA.clients.find(x=>x.id===clientId);
+  if(!c) return;
+  document.getElementById("drawerBiz").textContent = c.biz;
+  document.getElementById("drawerContact").textContent = `${c.contact} · ${c.email||"no email on file"} · ${c.phone||"no phone on file"}`;
+  document.getElementById("drawerBadges").innerHTML = `${stageBadge(c.stage)}<span class="cm-mini"><span class="dot"></span>${c.constraint}</span>`;
+
+  document.getElementById("pane-overview").innerHTML = `
+    <div class="kv">
+      <div class="item"><div class="k">Industry</div><div class="v">${c.industry}</div></div>
+      <div class="item"><div class="k">Assigned rep</div><div class="v">${repById(c.rep).name}</div></div>
+      <div class="item"><div class="k">Funding ask</div><div class="v num">${fmtMoney(c.ask)}</div></div>
+      <div class="item"><div class="k">Lead source</div><div class="v">${c.source||"—"}</div></div>
+      <div class="item"><div class="k">Days in stage</div><div class="v num">${c.daysInStage}</div></div>
+      <div class="item"><div class="k">Last activity</div><div class="v">${fmtDate(c.lastActivity)}</div></div>
+    </div>
+    <div class="constraint-meter" style="margin-bottom:18px;">
+      <div class="cm-label"><span>Constraint diagnosis</span><b>${c.constraint}</b></div>
+      ${constraintMeterHtml(c.constraint)}
+    </div>
+    <div class="row gap8">
+      <button class="btn btn-sm btn-primary" onclick="openModal('modalNewFunding'); document.getElementById('nf_client').value='${c.id}'">Log funding</button>
+      <button class="btn btn-sm" onclick="openModal('modalNewTask'); document.getElementById('nt_client').value='${c.id}'">Add task</button>
+      <button class="btn btn-sm btn-danger-ghost" onclick="closeDrawer(); toast('This would move the deal to Closed Lost','x')">Mark closed-lost</button>
+    </div>`;
+
+  const fRecords = DUMMY_DATA.fundingRecords.filter(f=>f.clientId===clientId);
+  document.getElementById("pane-funding").innerHTML = fRecords.length ? fRecords.map(f=>`
+    <div class="audit-item" style="align-items:flex-start;">
+      <div class="info">
+        <div class="biz">${f.type}</div>
+        <div class="meta">${f.lender} · ${fmtDate(f.date)}</div>
+        <div class="row gap8" style="margin-top:8px;">${fundingStatusBadge(f.status)}<span class="num" style="font-size:12.5px;">${fmtMoney(f.requested)} req → ${fmtMoney(f.placed)} placed</span></div>
+      </div>
+    </div>`).join("") : emptyState("No funding records", "Log a funding record for this client.");
+
+  const aRecords = DUMMY_DATA.audits.filter(a=>a.clientId===clientId);
+  document.getElementById("pane-audits").innerHTML = aRecords.length ? aRecords.map(a=>`
+    <div class="audit-item">${scoreRingHtml(a.score)}<div class="info"><div class="biz">${fmtDate(a.date)}</div><div class="meta">Constraint: <b>${a.constraint}</b></div><div class="cell-sub" style="margin-top:4px;">${a.notes}</div></div></div>`).join("") : emptyState("No audits on file", "Run a fundability audit for this client.");
+
+  const tRecords = DUMMY_DATA.tasks.filter(t=>t.clientId===clientId);
+  document.getElementById("pane-tasks").innerHTML = tRecords.length ? tRecords.map(taskRowFull).join("") : emptyState("No tasks linked", "Add a task tied to this client.");
+
+  document.getElementById("pane-notes").innerHTML = `
+    <div class="field"><textarea placeholder="Add an internal note about this client…" style="min-height:120px;"></textarea></div>
+    <button class="btn btn-sm btn-primary" style="margin-top:10px;" onclick="toast('Note saved','check')">Save note</button>
+    <div class="divider"></div>
+    <div class="cell-sub">Notes are internal only and never visible to the client.</div>`;
+
+  switchDrawerTab("overview");
+  document.getElementById("clientDrawer").classList.add("open");
+}
+function closeDrawer(){ document.getElementById("clientDrawer").classList.remove("open"); }
+function switchDrawerTab(pane){
+  document.querySelectorAll(".drawer-tab").forEach(b=>b.classList.toggle("active", b.dataset.pane===pane));
+  document.querySelectorAll(".drawer-pane").forEach(p=>p.classList.toggle("active", p.id==="pane-"+pane));
+}
+
+/* =========================================================================
+   MODALS / TOASTS / MISC
+   ========================================================================= */
+function openModal(id){ document.getElementById(id).classList.add("open"); }
+function closeModal(id){ document.getElementById(id).classList.remove("open"); }
+document.querySelectorAll(".overlay").forEach(ov=>{
+  ov.addEventListener("click", (e)=>{ if(e.target===ov) ov.classList.remove("open"); });
+});
+
+function toggleNotif(){
+  const panel = document.getElementById("notifPanel");
+  if(panel.style.display==="block"){ panel.style.display="none"; return; }
+  document.getElementById("notifItems").innerHTML = [
+    {t:"Stipulations requested — Coastal Fleet Services", ts:"1h ago"},
+    {t:"New fundability audit scored 74 — Union Ave Dental", ts:"4h ago"},
+    {t:"Referral payout pending — Highland Grove Landscaping", ts:"1d ago"},
+  ].map(n=>`<div class="activity-item" style="padding:9px 12px;"><div class="activity-dot"></div><div><div class="txt">${n.t}</div><div class="ts">${n.ts}</div></div></div>`).join("");
+  panel.style.display="block";
+}
+document.addEventListener("click",(e)=>{
+  const panel = document.getElementById("notifPanel");
+  const btn = document.getElementById("notifBtn");
+  if(panel.style.display==="block" && !panel.contains(e.target) && e.target!==btn && !btn.contains(e.target)){ panel.style.display="none"; }
+});
+
+function emptyState(title, desc){
+  return `<div class="empty-state">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M9 10h.01M15 10h.01M8 15c1 1.2 2.4 2 4 2s3-.8 4-2"/></svg>
+    <div class="t">${title}</div><div class="d">${desc}</div>
+  </div>`;
+}
+
+function handleGlobalSearch(e){
+  const q = e.target.value.trim();
+  if(q.length < 2) return;
+  switchView("clients");
+  document.getElementById("clientsSearch").value = q;
+  renderClients();
+}
+
+const TOAST_ICONS = {
+  check: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M20 6L9 17l-5-5"/></svg>',
+  x: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M18 6L6 18M6 6l12 12"/></svg>',
+  download: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 3v12M7 10l5 5 5-5"/><path d="M5 21h14"/></svg>',
+  link: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M10 13a5 5 0 0 0 7.5.5l2-2a5 5 0 0 0-7-7l-1 1"/><path d="M14 11a5 5 0 0 0-7.5-.5l-2 2a5 5 0 0 0 7 7l1-1"/></svg>',
+  cal: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>',
+};
+function toast(msg, icon){
+  const stack = document.getElementById("toastStack");
+  const el = document.createElement("div");
+  el.className = "toast";
+  el.innerHTML = `${TOAST_ICONS[icon]||TOAST_ICONS.check}<span>${msg}</span>`;
+  stack.appendChild(el);
+  setTimeout(()=>{ el.style.transition="opacity .3s"; el.style.opacity="0"; setTimeout(()=>el.remove(), 300); }, 3200);
+}
+</script>
+</body>
+</html>

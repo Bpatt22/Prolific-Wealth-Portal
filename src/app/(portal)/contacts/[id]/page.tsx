@@ -17,16 +17,16 @@ export default async function ContactDetailPage({ params }: { params: Promise<{ 
   const fullName = contact.contactName || [contact.firstName, contact.lastName].filter(Boolean).join(" ") || "Unnamed contact";
 
   return (
-    <div className="space-y-6">
+    <div className="stack">
       <div>
-        <h1 className="text-lg font-semibold text-zinc-900">{fullName}</h1>
-        <p className="mt-1 text-sm text-zinc-500">
+        <h2 style={{ fontSize: 18, fontWeight: 600 }}>{fullName}</h2>
+        <p style={{ marginTop: 4, fontSize: 12.5, color: "var(--slate)" }}>
           {contact.email ?? "No email"} · {contact.phone ?? "No phone"}
         </p>
         {!!contact.tags?.length && (
-          <div className="mt-2 flex flex-wrap gap-1.5">
+          <div style={{ marginTop: 8, display: "flex", flexWrap: "wrap", gap: 6 }}>
             {contact.tags.map((tag) => (
-              <span key={tag} className="rounded-full bg-zinc-200 px-2.5 py-0.5 text-xs text-zinc-700">
+              <span key={tag} className="badge badge-slate">
                 {tag}
               </span>
             ))}
@@ -36,53 +36,71 @@ export default async function ContactDetailPage({ params }: { params: Promise<{ 
 
       <EditableFields contactId={contact.id} portalFields={portalFields} />
 
-      <section className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
-        <h2 className="text-sm font-semibold text-zinc-900">Other fields</h2>
-        <dl className="mt-3 grid grid-cols-1 gap-x-6 gap-y-3 sm:grid-cols-2">
-          {(Object.entries(VIEW_ONLY_FIELDS) as [keyof typeof VIEW_ONLY_FIELDS, { label: string }][]).map(
-            ([key, field]) => (
-              <div key={key}>
-                <dt className="text-xs text-zinc-500">{field.label}</dt>
-                <dd className="text-sm text-zinc-900">
-                  {portalFields[key] !== undefined && portalFields[key] !== null && portalFields[key] !== ""
-                    ? String(portalFields[key])
-                    : "—"}
-                </dd>
+      <section className="card card-pad">
+        <div className="section-head">
+          <h2>Other fields</h2>
+        </div>
+        <div className="kv">
+          {(Object.entries(VIEW_ONLY_FIELDS) as [keyof typeof VIEW_ONLY_FIELDS, { label: string }][]).map(([key, field]) => (
+            <div className="item" key={key}>
+              <div className="k">{field.label}</div>
+              <div className="v">
+                {portalFields[key] !== undefined && portalFields[key] !== null && portalFields[key] !== ""
+                  ? String(portalFields[key])
+                  : "—"}
               </div>
-            )
-          )}
-        </dl>
+            </div>
+          ))}
+        </div>
       </section>
 
-      <section className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
-        <h2 className="text-sm font-semibold text-zinc-900">Appointments</h2>
+      <section className="card card-pad">
+        <div className="section-head">
+          <h2>Appointments</h2>
+        </div>
         {appointments.length === 0 ? (
-          <p className="mt-2 text-sm text-zinc-500">No appointments.</p>
+          <div className="empty-state">
+            <div className="t">No appointments</div>
+          </div>
         ) : (
-          <ul className="mt-3 space-y-2">
+          <div className="stack" style={{ gap: 8 }}>
             {appointments.map((a) => (
-              <li key={a.id} className="rounded-md border border-zinc-100 p-3 text-sm">
-                <p className="font-medium text-zinc-900">{a.title}</p>
-                <p className="text-xs text-zinc-500">
+              <div key={a.id} style={{ border: "1px solid var(--border-soft)", borderRadius: 8, padding: 12 }}>
+                <div style={{ fontWeight: 600, fontSize: 13 }}>{a.title}</div>
+                <div className="cell-sub">
                   {formatDate(a.startTime)} – {formatDate(a.endTime)} · {a.appointmentStatus}
-                </p>
-              </li>
+                </div>
+              </div>
             ))}
-          </ul>
+          </div>
         )}
       </section>
 
       {tasks.length > 0 && (
-        <section className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
-          <h2 className="text-sm font-semibold text-zinc-900">Tasks</h2>
-          <ul className="mt-3 space-y-2">
+        <section className="card card-pad">
+          <div className="section-head">
+            <h2>Tasks</h2>
+          </div>
+          <div className="stack" style={{ gap: 8 }}>
             {tasks.map((t) => (
-              <li key={t.id} className="flex items-center justify-between rounded-md border border-zinc-100 p-3 text-sm">
-                <span className={t.completed ? "text-zinc-400 line-through" : "text-zinc-900"}>{t.title}</span>
-                <span className="text-xs text-zinc-500">{formatDate(t.dueDate)}</span>
-              </li>
+              <div
+                key={t.id}
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  border: "1px solid var(--border-soft)",
+                  borderRadius: 8,
+                  padding: 12,
+                  fontSize: 13,
+                }}
+              >
+                <span style={t.completed ? { color: "var(--slate-light)", textDecoration: "line-through" } : undefined}>
+                  {t.title}
+                </span>
+                <span className="cell-sub">{formatDate(t.dueDate)}</span>
+              </div>
             ))}
-          </ul>
+          </div>
         </section>
       )}
 

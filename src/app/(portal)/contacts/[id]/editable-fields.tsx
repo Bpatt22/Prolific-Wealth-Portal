@@ -51,13 +51,14 @@ export default function EditableFields({ contactId, portalFields }: Props) {
   }
 
   return (
-    <section className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
-      <h2 className="text-sm font-semibold text-zinc-900">Funding</h2>
-      <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <div>
-          <label className="block text-xs text-zinc-500">{EDITABLE_FIELDS.fundingApproved.label}</label>
+    <section className="card card-pad">
+      <div className="section-head">
+        <h2>Funding</h2>
+      </div>
+      <div className="field-row3">
+        <div className="field">
+          <label>{EDITABLE_FIELDS.fundingApproved.label}</label>
           <select
-            className="mt-1 w-full rounded-md border border-zinc-300 px-2 py-1.5 text-sm"
             value={values.fundingApproved}
             onChange={(e) => setValues((v) => ({ ...v, fundingApproved: e.target.value }))}
           >
@@ -70,20 +71,18 @@ export default function EditableFields({ contactId, portalFields }: Props) {
           </select>
         </div>
 
-        <div>
-          <label className="block text-xs text-zinc-500">{EDITABLE_FIELDS.fundingAmount.label}</label>
+        <div className="field">
+          <label>{EDITABLE_FIELDS.fundingAmount.label}</label>
           <input
             type="number"
-            className="mt-1 w-full rounded-md border border-zinc-300 px-2 py-1.5 text-sm"
             value={values.fundingAmount}
             onChange={(e) => setValues((v) => ({ ...v, fundingAmount: e.target.value }))}
           />
         </div>
 
-        <div>
-          <label className="block text-xs text-zinc-500">{EDITABLE_FIELDS.amountPaidToReferrer.label}</label>
+        <div className="field">
+          <label>{EDITABLE_FIELDS.amountPaidToReferrer.label}</label>
           <select
-            className="mt-1 w-full rounded-md border border-zinc-300 px-2 py-1.5 text-sm"
             value={values.amountPaidToReferrer}
             onChange={(e) => setValues((v) => ({ ...v, amountPaidToReferrer: e.target.value }))}
           >
@@ -97,16 +96,12 @@ export default function EditableFields({ contactId, portalFields }: Props) {
         </div>
       </div>
 
-      <div className="mt-4 flex items-center gap-3">
-        <button
-          onClick={handleSave}
-          disabled={saving}
-          className="rounded-md bg-zinc-900 px-4 py-1.5 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-50"
-        >
+      <div className="row" style={{ gap: 12, marginTop: 16 }}>
+        <button onClick={handleSave} disabled={saving} className="btn btn-dark">
           {saving ? "Saving…" : "Save to GHL"}
         </button>
-        {savedAt && !error && <span className="text-xs text-emerald-600">Saved</span>}
-        {error && <span className="text-xs text-red-600">{error}</span>}
+        {savedAt && !error && <span style={{ fontSize: 12, color: "var(--green-600)" }}>Saved</span>}
+        {error && <span style={{ fontSize: 12, color: "var(--red-600)" }}>{error}</span>}
       </div>
     </section>
   );

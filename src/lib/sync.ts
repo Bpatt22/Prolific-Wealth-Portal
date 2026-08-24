@@ -46,24 +46,22 @@ export async function upsertOpportunityMirror(opp: GhlOpportunity) {
   if (error) throw error;
 }
 
-async function upsertInBatches<T>(
-  table: "contacts" | "opportunities",
-  rows: T[],
-  batchSize = 200
-) {
-  for (let i = 0; i < rows.length; i += batchSize) {
-    const chunk = rows.slice(i, i + batchSize);
-    const { error } = await supabaseAdmin.from(table).upsert(chunk);
+const BATCH_SIZE = 200;
+
+export async function upsertContactsMirrorBatch(contacts: GhlContact[]) {
+  const rows = contacts.map(contactRow);
+  for (let i = 0; i < rows.length; i += BATCH_SIZE) {
+    const { error } = await supabaseAdmin.from("contacts").upsert(rows.slice(i, i + BATCH_SIZE));
     if (error) throw error;
   }
 }
 
-export function upsertContactsMirrorBatch(contacts: GhlContact[]) {
-  return upsertInBatches("contacts", contacts.map(contactRow));
-}
-
-export function upsertOpportunitiesMirrorBatch(opportunities: GhlOpportunity[]) {
-  return upsertInBatches("opportunities", opportunities.map(opportunityRow));
+export async function upsertOpportunitiesMirrorBatch(opportunities: GhlOpportunity[]) {
+  const rows = opportunities.map(opportunityRow);
+  for (let i = 0; i < rows.length; i += BATCH_SIZE) {
+    const { error } = await supabaseAdmin.from("opportunities").upsert(rows.slice(i, i + BATCH_SIZE));
+    if (error) throw error;
+  }
 }
 
 export async function deleteContactMirror(ghlContactId: string) {

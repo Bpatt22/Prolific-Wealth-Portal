@@ -86,36 +86,56 @@ export default function OpportunitiesBoard() {
     }
   }
 
-  if (error) return <p className="text-sm text-red-600">{error}</p>;
-  if (!opportunities) return <p className="text-sm text-zinc-500">Loading…</p>;
+  if (error) return <p style={{ fontSize: 13, color: "var(--red-600)" }}>{error}</p>;
+  if (!opportunities) return <p style={{ fontSize: 13, color: "var(--slate)" }}>Loading…</p>;
 
   return (
     <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-      <div className="flex gap-4 overflow-x-auto pb-4">
-        {PIPELINE_STAGES.map((stage) => (
-          <StageColumn key={stage.id} id={stage.id} title={stage.name} opportunities={byStage.get(stage.id) ?? []} />
-        ))}
+      <div className="kanban">
+        {PIPELINE_STAGES.map((stage) => {
+          const cards = byStage.get(stage.id) ?? [];
+          const value = cards.reduce((s, c) => s + Number(c.monetary_value ?? 0), 0);
+          return (
+            <StageColumn key={stage.id} id={stage.id} title={stage.name} count={cards.length} value={value} opportunities={cards} />
+          );
+        })}
       </div>
       <DragOverlay>{activeOpp ? <Card opp={activeOpp} dragging /> : null}</DragOverlay>
     </DndContext>
   );
 }
 
-function StageColumn({ id, title, opportunities }: { id: string; title: string; opportunities: Opportunity[] }) {
+function fmtMoney(n: number) {
+  return "$" + Number(n).toLocaleString("en-US");
+}
+
+function StageColumn({
+  id,
+  title,
+  count,
+  value,
+  opportunities,
+}: {
+  id: string;
+  title: string;
+  count: number;
+  value: number;
+  opportunities: Opportunity[];
+}) {
   const { setNodeRef, isOver } = useDroppable({ id });
 
   return (
-    <div
-      ref={setNodeRef}
-      className={`flex w-72 shrink-0 flex-col rounded-lg border ${
-        isOver ? "border-zinc-400 bg-zinc-100" : "border-zinc-200 bg-zinc-50"
-      }`}
-    >
-      <div className="border-b border-zinc-200 px-3 py-2">
-        <p className="text-sm font-medium text-zinc-800">{title}</p>
-        <p className="text-xs text-zinc-500">{opportunities.length}</p>
+    <div ref={setNodeRef} className="kanban-col" style={isOver ? { outline: "2px solid var(--sky-500)" } : undefined}>
+      <div className="kanban-col-head">
+        <div className="title">
+          <span>{title}</span>
+          <span className="num" style={{ color: "var(--slate)", fontWeight: 600 }}>
+            {count}
+          </span>
+        </div>
+        <div className="meta">{fmtMoney(value)} total</div>
       </div>
-      <div className="flex flex-1 flex-col gap-2 p-2">
+      <div className="kanban-col-body">
         {opportunities.map((opp) => (
           <DraggableCard key={opp.ghl_opportunity_id} opp={opp} />
         ))}
@@ -145,14 +165,15 @@ function Card({ opp, dragging }: { opp: Opportunity; dragging?: boolean }) {
     <Link
       href={opp.contact_id ? `/contacts/${opp.contact_id}` : "#"}
       onClick={(e) => dragging && e.preventDefault()}
-      className={`block rounded-md border border-zinc-200 bg-white p-3 text-sm shadow-sm hover:border-zinc-400 ${
-        dragging ? "shadow-lg" : ""
-      }`}
+      className="kanban-card"
+      style={{ display: "block", textDecoration: "none", color: "inherit", boxShadow: dragging ? "var(--shadow-lg)" : undefined }}
     >
-      <p className="font-medium text-zinc-900">{contactName}</p>
-      {opp.contacts?.email && <p className="mt-0.5 truncate text-xs text-zinc-500">{opp.contacts.email}</p>}
+      <div className="biz">{contactName}</div>
+      {opp.contacts?.email && <div className="contact">{opp.contacts.email}</div>}
       {!!opp.monetary_value && (
-        <p className="mt-1 text-xs text-zinc-600">${Number(opp.monetary_value).toLocaleString()}</p>
+        <div className="foot">
+          <span className="ask">${Number(opp.monetary_value).toLocaleString()}</span>
+        </div>
       )}
     </Link>
   );

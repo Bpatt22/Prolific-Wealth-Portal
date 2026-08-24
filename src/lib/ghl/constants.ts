@@ -40,6 +40,15 @@ export const VIEW_ONLY_FIELDS = {
 
 export const ALL_PORTAL_FIELDS = { ...EDITABLE_FIELDS, ...VIEW_ONLY_FIELDS };
 
+export const CONSTRAINT_TYPE_OPTIONS = [
+  "Sales Team",
+  "Equipment",
+  "Ad Spend",
+  "Key Man Risk",
+  "Systems & Automation",
+  "Credit",
+] as const;
+
 export const EDITABLE_FIELD_IDS: Set<string> = new Set(
   Object.values(EDITABLE_FIELDS).map((f): string => f.id)
 );

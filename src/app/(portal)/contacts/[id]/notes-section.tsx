@@ -29,35 +29,33 @@ export default function NotesSection({ contactId, initialNotes }: { contactId: s
   }
 
   return (
-    <section className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
-      <h2 className="text-sm font-semibold text-zinc-900">Notes</h2>
+    <section className="card card-pad">
+      <div className="section-head">
+        <h2>Notes</h2>
+      </div>
 
-      <div className="mt-3 flex gap-2">
-        <textarea
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-          rows={2}
-          placeholder="Add a note…"
-          className="flex-1 rounded-md border border-zinc-300 px-3 py-2 text-sm"
-        />
-        <button
-          onClick={handleAddNote}
-          disabled={saving}
-          className="self-start rounded-md bg-zinc-900 px-3 py-2 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-50"
-        >
+      <div className="row" style={{ gap: 8, alignItems: "flex-start" }}>
+        <div className="field" style={{ flex: 1 }}>
+          <textarea value={draft} onChange={(e) => setDraft(e.target.value)} rows={2} placeholder="Add a note…" />
+        </div>
+        <button onClick={handleAddNote} disabled={saving} className="btn btn-dark">
           Add
         </button>
       </div>
 
-      <ul className="mt-4 space-y-3">
+      <div className="stack" style={{ gap: 10, marginTop: 16 }}>
         {notes.map((n) => (
-          <li key={n.id} className="rounded-md border border-zinc-100 p-3 text-sm">
-            <p className="whitespace-pre-wrap text-zinc-800">{n.body}</p>
-            <p className="mt-1 text-xs text-zinc-400">{new Date(n.dateAdded).toLocaleString()}</p>
-          </li>
+          <div key={n.id} style={{ border: "1px solid var(--border-soft)", borderRadius: 8, padding: 12 }}>
+            <p style={{ margin: 0, fontSize: 13, whiteSpace: "pre-wrap", color: "var(--ink)" }}>{n.body}</p>
+            <p style={{ margin: "6px 0 0", fontSize: 11, color: "var(--slate-light)" }}>{new Date(n.dateAdded).toLocaleString()}</p>
+          </div>
         ))}
-        {notes.length === 0 && <p className="text-sm text-zinc-500">No notes yet.</p>}
-      </ul>
+        {notes.length === 0 && (
+          <div className="empty-state">
+            <div className="t">No notes yet</div>
+          </div>
+        )}
+      </div>
     </section>
   );
 }
