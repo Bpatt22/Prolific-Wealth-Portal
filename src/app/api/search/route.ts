@@ -10,12 +10,14 @@ export async function GET(req: NextRequest) {
   const q = rawQ.replace(/[,()*]/g, "");
   if (q.length < 2) return NextResponse.json({ results: [] });
 
-  const { data, error } = await supabaseAdmin
+  let query = supabaseAdmin
     .from("contacts")
     .select("ghl_contact_id, first_name, last_name, email, phone")
-    .eq("owner_id", member.ghlUserId)
     .or(`first_name.ilike.%${q}%,last_name.ilike.%${q}%,email.ilike.%${q}%,phone.ilike.%${q}%`)
     .limit(8);
+  if (!member.isOwner) query = query.eq("owner_id", member.ghlUserId);
+
+  const { data, error } = await query;
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 

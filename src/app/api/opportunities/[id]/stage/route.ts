@@ -23,7 +23,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     .maybeSingle();
 
   if (fetchError) return NextResponse.json({ error: fetchError.message }, { status: 500 });
-  if (!existing || existing.owner_id !== member.ghlUserId) {
+  if (!existing || (!member.isOwner && existing.owner_id !== member.ghlUserId)) {
     return NextResponse.json({ error: "not found" }, { status: 404 });
   }
 

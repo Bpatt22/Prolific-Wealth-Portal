@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
-import { getCurrentTeamMember } from "@/lib/auth";
+import { getCurrentTeamMember, type TeamMember } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { CONSTRAINT_TYPE_OPTIONS, PIPELINE_STAGES } from "@/lib/ghl/constants";
 import FunnelBars from "../funnel-bars";
@@ -23,42 +23,41 @@ function formatCurrency(n: number) {
 
 const LOST_STAGE_ID = PIPELINE_STAGES.find((s) => s.name === "Lost / Disqualified")?.id;
 
-async function getDashboardData(ghlUserId: string) {
-  const { data: myContacts, error: contactsError } = await supabaseAdmin
+async function getDashboardData(member: TeamMember) {
+  let contactsQuery = supabaseAdmin
     .from("contacts")
-    .select("ghl_contact_id, first_name, last_name, custom_fields, date_updated")
-    .eq("owner_id", ghlUserId)
-    .returns<ContactRow[]>();
+    .select("ghl_contact_id, first_name, last_name, custom_fields, date_updated");
+  if (!member.isOwner) contactsQuery = contactsQuery.eq("owner_id", member.ghlUserId);
+  const { data: myContacts, error: contactsError } = await contactsQuery.returns<ContactRow[]>();
   if (contactsError) throw contactsError;
 
   const contactIds = (myContacts ?? []).map((c) => c.ghl_contact_id);
 
+  let fundingQuery = supabaseAdmin.from("Funding Ledger").select('"Funding Amount", "Prolific Fee", "Invoice Status"');
+  if (!member.isOwner) fundingQuery = fundingQuery.in("GHL Contact ID", contactIds);
+
+  let referralQuery = supabaseAdmin.from("Referral Ledger").select('"Payout Owed", "Payout Status"');
+  if (!member.isOwner) referralQuery = referralQuery.in("Referral Client Contact Id", contactIds);
+
+  let oppQuery = supabaseAdmin.from("opportunities").select("stage_id, monetary_value, status");
+  if (!member.isOwner) oppQuery = oppQuery.eq("owner_id", member.ghlUserId);
+
+  let recentOppsQuery = supabaseAdmin
+    .from("opportunities")
+    .select("ghl_opportunity_id, name, date_updated")
+    .order("date_updated", { ascending: false })
+    .limit(6);
+  if (!member.isOwner) recentOppsQuery = recentOppsQuery.eq("owner_id", member.ghlUserId);
+
   const [fundingResult, referralResult, oppResult, recentOppsResult] = await Promise.all([
-    contactIds.length
-      ? supabaseAdmin
-          .from("Funding Ledger")
-          .select('"Funding Amount", "Prolific Fee", "Invoice Status"')
-          .in("GHL Contact ID", contactIds)
-          .returns<FundingRow[]>()
-      : Promise.resolve({ data: [] as FundingRow[], error: null }),
-    contactIds.length
-      ? supabaseAdmin
-          .from("Referral Ledger")
-          .select('"Payout Owed", "Payout Status"')
-          .in("Referral Client Contact Id", contactIds)
-          .returns<ReferralRow[]>()
-      : Promise.resolve({ data: [] as ReferralRow[], error: null }),
-    supabaseAdmin
-      .from("opportunities")
-      .select("stage_id, monetary_value, status")
-      .eq("owner_id", ghlUserId)
-      .returns<OppRow[]>(),
-    supabaseAdmin
-      .from("opportunities")
-      .select("ghl_opportunity_id, name, date_updated")
-      .eq("owner_id", ghlUserId)
-      .order("date_updated", { ascending: false })
-      .limit(6),
+    !member.isOwner && contactIds.length === 0
+      ? Promise.resolve({ data: [] as FundingRow[], error: null })
+      : fundingQuery.returns<FundingRow[]>(),
+    !member.isOwner && contactIds.length === 0
+      ? Promise.resolve({ data: [] as ReferralRow[], error: null })
+      : referralQuery.returns<ReferralRow[]>(),
+    oppQuery.returns<OppRow[]>(),
+    recentOppsQuery,
   ]);
 
   if (fundingResult.error) throw fundingResult.error;
@@ -134,7 +133,7 @@ async function getDashboardData(ghlUserId: string) {
 
 export default async function DashboardPage() {
   const member = await getCurrentTeamMember();
-  const data = await getDashboardData(member.ghlUserId);
+  const data = await getDashboardData(member);
 
   const kpis = [
     { label: "Active Opportunities", value: String(data.kpis.activeOpportunities) },
@@ -162,7 +161,7 @@ export default async function DashboardPage() {
             <div className="section-head row between">
               <div>
                 <h2>Pipeline by stage</h2>
-                <p>Your open deals across the Prolific Wealth Group funnel</p>
+                <p>{member.isOwner ? "All" : "Your"} open deals across the Prolific Wealth Group funnel</p>
               </div>
               <Link href="/opportunities" className="btn btn-sm">
                 Open pipeline →
@@ -181,7 +180,7 @@ export default async function DashboardPage() {
           <div className="card card-pad">
             <div className="section-head">
               <h2>Constraint diagnosis mix</h2>
-              <p>Primary bottleneck across your contacts, from the Constraint Type field in GHL</p>
+              <p>Primary bottleneck across {member.isOwner ? "all" : "your"} contacts, from the Constraint Type field in GHL</p>
             </div>
             <FunnelBars rows={data.constraintRows} />
           </div>

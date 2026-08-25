@@ -8,7 +8,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
   const contact = await getContact(id).catch(() => null);
   if (!contact) return NextResponse.json({ error: "not found" }, { status: 404 });
-  if (contact.assignedTo !== member.ghlUserId) {
+  if (!member.isOwner && contact.assignedTo !== member.ghlUserId) {
     return NextResponse.json({ error: "forbidden" }, { status: 403 });
   }
 

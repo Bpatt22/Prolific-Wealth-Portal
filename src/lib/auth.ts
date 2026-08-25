@@ -8,11 +8,21 @@ export type TeamMember = {
   ghlUserId: string;
   name: string | null;
   email: string;
+  isOwner: boolean;
 };
+
+const OWNER_EMAILS = new Set(
+  (process.env.OWNER_EMAILS ?? "")
+    .split(",")
+    .map((e) => e.trim().toLowerCase())
+    .filter(Boolean)
+);
 
 // Resolves the logged-in Supabase auth user to their mapped GHL user id.
 // This mapping is what enforces "you only see what you're assigned in GHL" —
 // it must exist in team_members (created by an admin when onboarding a team member).
+// A user whose email is listed in OWNER_EMAILS bypasses that scoping entirely
+// and sees every contact/opportunity regardless of GHL assignment.
 export async function getCurrentTeamMember(): Promise<TeamMember> {
   const supabase = await createSupabaseServerClient();
   const {
@@ -40,5 +50,6 @@ export async function getCurrentTeamMember(): Promise<TeamMember> {
     ghlUserId: data.ghl_user_id,
     name: data.name,
     email: data.email,
+    isOwner: OWNER_EMAILS.has(data.email.toLowerCase()),
   };
 }

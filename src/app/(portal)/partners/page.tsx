@@ -1,5 +1,6 @@
 import { getCurrentTeamMember } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase/admin";
+import { getScopedContactIds } from "@/lib/scopedContacts";
 
 type ReferralRow = {
   "Referrer Name": string | null;
@@ -18,16 +19,16 @@ const isPaid = (status: string | null) => (status ?? "").toLowerCase().includes(
 export default async function PartnersPage() {
   const member = await getCurrentTeamMember();
 
-  const { data: myContacts } = await supabaseAdmin.from("contacts").select("ghl_contact_id").eq("owner_id", member.ghlUserId);
-  const contactIds = (myContacts ?? []).map((c) => c.ghl_contact_id);
+  const contactIds = await getScopedContactIds(member);
 
   let rows: ReferralRow[] = [];
-  if (contactIds.length > 0) {
-    const { data, error } = await supabaseAdmin
+  if (contactIds === null || contactIds.length > 0) {
+    let query = supabaseAdmin
       .from("Referral Ledger")
-      .select('"Referrer Name", "Referred Client", "Success Fee", "Payout Owed", "Payout Status"')
-      .in("Referral Client Contact Id", contactIds)
-      .returns<ReferralRow[]>();
+      .select('"Referrer Name", "Referred Client", "Success Fee", "Payout Owed", "Payout Status"');
+    if (contactIds) query = query.in("Referral Client Contact Id", contactIds);
+
+    const { data, error } = await query.returns<ReferralRow[]>();
     if (error) throw error;
     rows = data ?? [];
   }
@@ -55,7 +56,9 @@ export default async function PartnersPage() {
     <section>
       <div className="section-head">
         <h2>Referral Partners</h2>
-        <p>Live rollup from Referral Ledger, for referrals into your clients — read-only</p>
+        <p>
+          Live rollup from Referral Ledger — read-only{member.isOwner ? ", showing all clients" : ", for referrals into your clients"}
+        </p>
       </div>
 
       <div className="kpi-grid" style={{ gridTemplateColumns: "repeat(3, 1fr)" }}>

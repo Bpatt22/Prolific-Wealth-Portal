@@ -7,8 +7,8 @@ import type { TeamMember } from "./auth";
 export async function loadContactDetail(contactId: string, member: TeamMember) {
   const contact = await getContact(contactId).catch(() => null);
   // Not found and "assigned to someone else" both 404 — we don't want to reveal
-  // that a contact exists to a team member it isn't assigned to.
-  if (!contact || contact.assignedTo !== member.ghlUserId) notFound();
+  // that a contact exists to a team member it isn't assigned to. Owners bypass this.
+  if (!contact || (!member.isOwner && contact.assignedTo !== member.ghlUserId)) notFound();
 
   const [notes, appointments, tasks] = await Promise.all([
     listNotes(contactId).catch(() => []),

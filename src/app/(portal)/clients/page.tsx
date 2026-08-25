@@ -15,12 +15,14 @@ type ContactRow = {
 export default async function ClientsPage() {
   const member = await getCurrentTeamMember();
 
-  const { data, error } = await supabaseAdmin
+  let query = supabaseAdmin
     .from("contacts")
     .select("ghl_contact_id, first_name, last_name, email, phone, tags, date_updated")
-    .eq("owner_id", member.ghlUserId)
     .order("date_updated", { ascending: false })
-    .returns<ContactRow[]>();
+    .limit(1000);
+  if (!member.isOwner) query = query.eq("owner_id", member.ghlUserId);
+
+  const { data, error } = await query.returns<ContactRow[]>();
 
   if (error) throw error;
   const contacts = data ?? [];
@@ -29,7 +31,9 @@ export default async function ClientsPage() {
     <section>
       <div className="section-head">
         <h2>Clients</h2>
-        <p>Every contact assigned to you in GHL — {contacts.length} total</p>
+        <p>
+          {member.isOwner ? "Every contact" : "Every contact assigned to you"} in GHL — {contacts.length} total
+        </p>
       </div>
 
       <div className="table-wrap">

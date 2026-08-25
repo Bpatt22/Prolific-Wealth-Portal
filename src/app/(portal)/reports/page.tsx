@@ -1,5 +1,6 @@
 import { getCurrentTeamMember } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase/admin";
+import { getScopedContactIds } from "@/lib/scopedContacts";
 import { PIPELINE_STAGES } from "@/lib/ghl/constants";
 import FunnelBars from "../funnel-bars";
 
@@ -15,25 +16,20 @@ const LOST_STAGE_ID = PIPELINE_STAGES.find((s) => s.name === "Lost / Disqualifie
 export default async function ReportsPage() {
   const member = await getCurrentTeamMember();
 
-  const { data: myContacts } = await supabaseAdmin.from("contacts").select("ghl_contact_id").eq("owner_id", member.ghlUserId);
-  const contactIds = (myContacts ?? []).map((c) => c.ghl_contact_id);
+  const contactIds = await getScopedContactIds(member);
 
   let fundingRows: FundingRow[] = [];
-  if (contactIds.length > 0) {
-    const { data, error } = await supabaseAdmin
-      .from("Funding Ledger")
-      .select('"Funding Amount", "Approval Date"')
-      .in("GHL Contact ID", contactIds)
-      .returns<FundingRow[]>();
+  if (contactIds === null || contactIds.length > 0) {
+    let fundingQuery = supabaseAdmin.from("Funding Ledger").select('"Funding Amount", "Approval Date"');
+    if (contactIds) fundingQuery = fundingQuery.in("GHL Contact ID", contactIds);
+    const { data, error } = await fundingQuery.returns<FundingRow[]>();
     if (error) throw error;
     fundingRows = data ?? [];
   }
 
-  const { data: oppRows, error: oppError } = await supabaseAdmin
-    .from("opportunities")
-    .select("stage_id, monetary_value")
-    .eq("owner_id", member.ghlUserId)
-    .returns<OppRow[]>();
+  let oppQuery = supabaseAdmin.from("opportunities").select("stage_id, monetary_value");
+  if (!member.isOwner) oppQuery = oppQuery.eq("owner_id", member.ghlUserId);
+  const { data: oppRows, error: oppError } = await oppQuery.returns<OppRow[]>();
   if (oppError) throw oppError;
 
   const byMonth = new Map<string, number>();

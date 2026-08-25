@@ -17,11 +17,12 @@ export default async function PortalLayout({ children }: { children: React.React
   const member = await getCurrentTeamMember();
   const displayName = member.name ?? member.email;
 
-  const { count: pipelineCount } = await supabaseAdmin
+  let pipelineCountQuery = supabaseAdmin
     .from("opportunities")
     .select("ghl_opportunity_id", { count: "exact", head: true })
-    .eq("owner_id", member.ghlUserId)
     .eq("status", "open");
+  if (!member.isOwner) pipelineCountQuery = pipelineCountQuery.eq("owner_id", member.ghlUserId);
+  const { count: pipelineCount } = await pipelineCountQuery;
 
   return (
     <div className="app">
@@ -89,7 +90,11 @@ export default async function PortalLayout({ children }: { children: React.React
         </nav>
 
         <div className="sidebar-footer">
-          <span style={{ fontSize: 11, color: "#7c8fae" }}>Assigned to you in GHL, live-synced.</span>
+          {member.isOwner ? (
+            <span className="badge badge-blue">Owner view — all clients</span>
+          ) : (
+            <span style={{ fontSize: 11, color: "#7c8fae" }}>Assigned to you in GHL, live-synced.</span>
+          )}
         </div>
       </aside>
 
@@ -105,7 +110,7 @@ export default async function PortalLayout({ children }: { children: React.React
               <div className="avatar">{initials(displayName)}</div>
               <div className="who">
                 <div className="n">{displayName}</div>
-                <div className="r">Team member</div>
+                <div className="r">{member.isOwner ? "Owner · full access" : "Team member"}</div>
               </div>
             </div>
             <SignOutButton />
