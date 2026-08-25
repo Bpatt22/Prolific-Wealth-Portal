@@ -30,11 +30,15 @@ export async function proxy(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   const isLoginPage = request.nextUrl.pathname.startsWith("/login");
+  // /invite carries its session as a URL fragment (or a not-yet-exchanged code) that
+  // the server can't see on first load — it must be reachable before any cookie exists
+  // so the client-side Supabase auth listener gets a chance to process it.
+  const isInvitePage = request.nextUrl.pathname.startsWith("/invite");
   const isPublicApi =
     request.nextUrl.pathname.startsWith("/api/webhooks") ||
     request.nextUrl.pathname.startsWith("/api/admin");
 
-  if (!user && !isLoginPage && !isPublicApi) {
+  if (!user && !isLoginPage && !isInvitePage && !isPublicApi) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     return NextResponse.redirect(url);

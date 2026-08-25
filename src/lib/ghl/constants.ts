@@ -1,5 +1,6 @@
 export const GHL_LOCATION_ID = process.env.GHL_LOCATION_ID!;
 export const GHL_PIPELINE_ID = process.env.GHL_PIPELINE_ID!;
+export const GHL_COMPANY_ID = process.env.GHL_COMPANY_ID!;
 
 // Stages of the "Prolific Wealth Group" pipeline, in board order.
 export const PIPELINE_STAGES = [
