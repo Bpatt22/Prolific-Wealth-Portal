@@ -3,6 +3,7 @@ import { loadContactDetail } from "@/lib/contactDetail";
 import { VIEW_ONLY_FIELDS } from "@/lib/ghl/constants";
 import EditableFields from "./editable-fields";
 import NotesSection from "./notes-section";
+import TasksSection from "./tasks-section";
 
 function formatDate(d?: string | null) {
   if (!d) return "—";
@@ -76,33 +77,7 @@ export default async function ContactDetailPage({ params }: { params: Promise<{ 
         )}
       </section>
 
-      {tasks.length > 0 && (
-        <section className="card card-pad">
-          <div className="section-head">
-            <h2>Tasks</h2>
-          </div>
-          <div className="stack" style={{ gap: 8 }}>
-            {tasks.map((t) => (
-              <div
-                key={t.id}
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  border: "1px solid var(--border-soft)",
-                  borderRadius: 8,
-                  padding: 12,
-                  fontSize: 13,
-                }}
-              >
-                <span style={t.completed ? { color: "var(--slate-light)", textDecoration: "line-through" } : undefined}>
-                  {t.title}
-                </span>
-                <span className="cell-sub">{formatDate(t.dueDate)}</span>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
+      <TasksSection contactId={contact.id} initialTasks={tasks} />
 
       <NotesSection contactId={contact.id} initialNotes={notes} />
     </div>

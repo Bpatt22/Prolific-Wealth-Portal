@@ -4,6 +4,7 @@ import { getCurrentTeamMember } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { CONSTRAINT_TYPE_OPTIONS, PIPELINE_STAGES } from "@/lib/ghl/constants";
 import FunnelBars from "../funnel-bars";
+import NewLeadButton from "../new-lead-button";
 
 type FundingRow = { "Funding Amount": number | null; "Prolific Fee": number | null; "Invoice Status": string | null };
 type ReferralRow = { "Payout Owed": number | null; "Payout Status": string | null };
@@ -192,7 +193,13 @@ export default async function DashboardPage() {
               <h2>Quick actions</h2>
             </div>
             <div className="stack" style={{ gap: 9 }}>
-              <Link href="/opportunities" className="btn btn-dark" style={{ justifyContent: "flex-start" }}>
+              <NewLeadButton className="btn btn-dark">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginRight: 4 }}>
+                  <path d="M12 5v14M5 12h14" />
+                </svg>
+                New client / lead
+              </NewLeadButton>
+              <Link href="/opportunities" className="btn" style={{ justifyContent: "flex-start" }}>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M3 5h18M6 12h12M10 19h4" />
                 </svg>

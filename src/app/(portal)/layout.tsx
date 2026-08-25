@@ -1,8 +1,8 @@
-import Link from "next/link";
 import { getCurrentTeamMember } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import NavLink from "./nav-link";
 import SignOutButton from "./sign-out-button";
+import GlobalSearch from "./global-search";
 
 function initials(name: string) {
   return name
@@ -54,6 +54,12 @@ export default async function PortalLayout({ children }: { children: React.React
             Client Pipeline
             {typeof pipelineCount === "number" && <span className="count">{pipelineCount}</span>}
           </NavLink>
+          <NavLink href="/funding">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+            </svg>
+            Funding Tracker
+          </NavLink>
 
           <div className="nav-group-label">Relationships</div>
           <NavLink href="/clients">
@@ -64,6 +70,21 @@ export default async function PortalLayout({ children }: { children: React.React
               <path d="M16 14.3c2.5.4 4.2 2.1 5 5.3" />
             </svg>
             Clients
+          </NavLink>
+          <NavLink href="/partners">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M16 3l4 4-4 4M20 7H8a4 4 0 0 0-4 4v1M8 21l-4-4 4-4M4 17h12a4 4 0 0 0 4-4v-1" />
+            </svg>
+            Referral Partners
+          </NavLink>
+
+          <div className="nav-group-label">Operations</div>
+          <NavLink href="/reports">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M3 3v18h18" />
+              <path d="M7 15l4-5 3 3 5-7" />
+            </svg>
+            Reports
           </NavLink>
         </nav>
 
@@ -78,6 +99,7 @@ export default async function PortalLayout({ children }: { children: React.React
             <div className="page-title">Prolific Wealth Group</div>
             <div className="page-sub">Team portal</div>
           </div>
+          <GlobalSearch />
           <div className="topbar-actions">
             <div className="user-chip">
               <div className="avatar">{initials(displayName)}</div>

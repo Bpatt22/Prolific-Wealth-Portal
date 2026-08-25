@@ -40,6 +40,24 @@ export function updateContactFields(
   return ghl.put<{ contact: GhlContact }>(`/contacts/${contactId}`, fields);
 }
 
+export function createContact(input: {
+  firstName?: string;
+  lastName?: string;
+  companyName?: string;
+  email?: string;
+  phone?: string;
+  source?: string;
+  assignedTo?: string;
+}) {
+  return ghl
+    .post<{ contact: GhlContact }>("/contacts/", { locationId: GHL_LOCATION_ID, ...input })
+    .then((r) => r.contact);
+}
+
+export function deleteContact(contactId: string) {
+  return ghl.delete<unknown>(`/contacts/${contactId}`);
+}
+
 export function listNotes(contactId: string) {
   return ghl.get<{ notes: GhlNote[] }>(`/contacts/${contactId}/notes`).then((r) => r.notes);
 }
@@ -54,4 +72,14 @@ export function listAppointments(contactId: string) {
 
 export function listTasks(contactId: string) {
   return ghl.get<{ tasks: GhlTask[] }>(`/contacts/${contactId}/tasks`).then((r) => r.tasks);
+}
+
+export function createTask(contactId: string, input: { title: string; dueDate: string; assignedTo?: string }) {
+  return ghl
+    .post<{ task: GhlTask }>(`/contacts/${contactId}/tasks`, { ...input, completed: false })
+    .then((r) => r.task);
+}
+
+export function updateTask(contactId: string, taskId: string, input: { completed?: boolean; title?: string; dueDate?: string }) {
+  return ghl.put<{ task: GhlTask }>(`/contacts/${contactId}/tasks/${taskId}`, input).then((r) => r.task);
 }

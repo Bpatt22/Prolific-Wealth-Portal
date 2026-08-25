@@ -40,3 +40,24 @@ export function updateOpportunityStage(opportunityId: string, pipelineStageId: s
     .put<{ opportunity: GhlOpportunity }>(`/opportunities/${opportunityId}`, { pipelineStageId })
     .then((r) => r.opportunity);
 }
+
+export function createOpportunity(input: {
+  name: string;
+  contactId: string;
+  pipelineStageId: string;
+  monetaryValue?: number;
+  assignedTo?: string;
+}) {
+  return ghl
+    .post<{ opportunity: GhlOpportunity }>("/opportunities/", {
+      locationId: GHL_LOCATION_ID,
+      pipelineId: GHL_PIPELINE_ID,
+      status: "open",
+      ...input,
+    })
+    .then((r) => r.opportunity);
+}
+
+export function deleteOpportunity(opportunityId: string) {
+  return ghl.delete<unknown>(`/opportunities/${opportunityId}`);
+}
