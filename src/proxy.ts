@@ -36,8 +36,7 @@ export async function proxy(request: NextRequest) {
   const isInvitePage = request.nextUrl.pathname.startsWith("/invite");
   const isPublicApi =
     request.nextUrl.pathname.startsWith("/api/webhooks") ||
-    request.nextUrl.pathname.startsWith("/api/admin") ||
-    request.nextUrl.pathname.startsWith("/api/debug-origin");
+    request.nextUrl.pathname.startsWith("/api/admin");
 
   if (!user && !isLoginPage && !isInvitePage && !isPublicApi) {
     const url = request.nextUrl.clone();
