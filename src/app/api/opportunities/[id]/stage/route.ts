@@ -16,14 +16,18 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     return NextResponse.json({ error: "invalid stageId" }, { status: 400 });
   }
 
+  // Ownership follows the linked contact's GHL owner, not the opportunity's
+  // own separate "assigned to" field — see /api/opportunities for why.
   const { data: existing, error: fetchError } = await supabaseAdmin
     .from("opportunities")
-    .select("owner_id")
+    .select("contact_id, contacts(owner_id)")
     .eq("ghl_opportunity_id", id)
     .maybeSingle();
 
   if (fetchError) return NextResponse.json({ error: fetchError.message }, { status: 500 });
-  if (!existing || (!member.isOwner && existing.owner_id !== member.ghlUserId)) {
+  const contactRow = existing?.contacts as unknown as { owner_id: string | null } | { owner_id: string | null }[] | null;
+  const ownerId = Array.isArray(contactRow) ? contactRow[0]?.owner_id : contactRow?.owner_id;
+  if (!existing || (!member.isOwner && ownerId !== member.ghlUserId)) {
     return NextResponse.json({ error: "not found" }, { status: 404 });
   }
 

@@ -1,12 +1,20 @@
 import { NextResponse } from "next/server";
 import { getCurrentTeamMember } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase/admin";
+import { getScopedContactIds } from "@/lib/scopedContacts";
 
-// Returns this user's opportunities (owner-scoped to their GHL user id, or
-// every opportunity if they're an owner), read from the mirror table so the
-// board loads instantly.
+// Returns this user's opportunities, read from the mirror table so the board
+// loads instantly. Scoped by the linked contact's GHL owner — not the
+// opportunity's own separate "assigned to" field, since GHL tracks those
+// independently and a contact being assigned to someone doesn't also assign
+// their opportunities. Owners see everything.
 export async function GET() {
   const member = await getCurrentTeamMember();
+  const contactIds = await getScopedContactIds(member);
+
+  if (contactIds?.length === 0) {
+    return NextResponse.json({ opportunities: [] });
+  }
 
   let query = supabaseAdmin
     .from("opportunities")
@@ -15,7 +23,7 @@ export async function GET() {
     )
     .order("date_updated", { ascending: false });
 
-  if (!member.isOwner) query = query.eq("owner_id", member.ghlUserId);
+  if (contactIds) query = query.in("contact_id", contactIds);
 
   const { data, error } = await query;
 

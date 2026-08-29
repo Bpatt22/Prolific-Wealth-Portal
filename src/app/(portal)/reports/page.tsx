@@ -27,10 +27,16 @@ export default async function ReportsPage() {
     fundingRows = data ?? [];
   }
 
-  let oppQuery = supabaseAdmin.from("opportunities").select("stage_id, monetary_value");
-  if (!member.isOwner) oppQuery = oppQuery.eq("owner_id", member.ghlUserId);
-  const { data: oppRows, error: oppError } = await oppQuery.returns<OppRow[]>();
-  if (oppError) throw oppError;
+  // Scoped by the linked contact's owner, not the opportunity's own separate
+  // "assigned to" field — see /api/opportunities for why.
+  let oppRows: OppRow[] = [];
+  if (contactIds === null || contactIds.length > 0) {
+    let oppQuery = supabaseAdmin.from("opportunities").select("stage_id, monetary_value");
+    if (contactIds) oppQuery = oppQuery.in("contact_id", contactIds);
+    const { data, error } = await oppQuery.returns<OppRow[]>();
+    if (error) throw error;
+    oppRows = data ?? [];
+  }
 
   const byMonth = new Map<string, number>();
   for (const r of fundingRows) {

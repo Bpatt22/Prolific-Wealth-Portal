@@ -39,15 +39,17 @@ async function getDashboardData(member: TeamMember) {
   let referralQuery = supabaseAdmin.from("Referral Ledger").select('"Payout Owed", "Payout Status"');
   if (!member.isOwner) referralQuery = referralQuery.in("Referral Client Contact Id", contactIds);
 
+  // Opportunities are scoped by the linked contact's owner, not the
+  // opportunity's own separate "assigned to" field — see /api/opportunities.
   let oppQuery = supabaseAdmin.from("opportunities").select("stage_id, monetary_value, status");
-  if (!member.isOwner) oppQuery = oppQuery.eq("owner_id", member.ghlUserId);
+  if (!member.isOwner) oppQuery = oppQuery.in("contact_id", contactIds);
 
   let recentOppsQuery = supabaseAdmin
     .from("opportunities")
     .select("ghl_opportunity_id, name, date_updated")
     .order("date_updated", { ascending: false })
     .limit(6);
-  if (!member.isOwner) recentOppsQuery = recentOppsQuery.eq("owner_id", member.ghlUserId);
+  if (!member.isOwner) recentOppsQuery = recentOppsQuery.in("contact_id", contactIds);
 
   const [fundingResult, referralResult, oppResult, recentOppsResult] = await Promise.all([
     !member.isOwner && contactIds.length === 0
