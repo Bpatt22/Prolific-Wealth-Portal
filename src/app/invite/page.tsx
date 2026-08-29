@@ -17,24 +17,40 @@ export default function InvitePage() {
   useEffect(() => {
     let cancelled = false;
 
-    async function checkSession() {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!cancelled) {
-        setEmail(user?.email ?? null);
-        setChecking(false);
-      }
+    function finish(sessionEmail: string | null | undefined) {
+      if (cancelled) return;
+      setEmail(sessionEmail ?? null);
+      setChecking(false);
     }
 
-    checkSession();
-
     const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session?.user) {
-        setEmail(session.user.email ?? null);
-        setChecking(false);
-      }
+      if (session?.user) finish(session.user.email);
     });
+
+    (async () => {
+      // The invite link puts the session in the URL hash (#access_token=...&refresh_token=...).
+      // The Supabase client normally parses this automatically on load, but that happens
+      // asynchronously — set it explicitly ourselves so we're not racing that detection.
+      const hash = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+      const accessToken = hash.get("access_token");
+      const refreshToken = hash.get("refresh_token");
+
+      if (accessToken && refreshToken) {
+        const { data, error } = await supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken });
+        if (!error && data.session?.user) {
+          finish(data.session.user.email);
+          return;
+        }
+      }
+
+      // No hash tokens (or setSession failed) — fall back to checking for an
+      // already-established session before giving up, in case onAuthStateChange
+      // already fired.
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      finish(session?.user?.email);
+    })();
 
     return () => {
       cancelled = true;
