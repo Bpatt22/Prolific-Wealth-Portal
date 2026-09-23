@@ -16,15 +16,21 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
-  const contacts = await listAllContacts();
-  await upsertContactsMirrorBatch(contacts);
+  try {
+    const contacts = await listAllContacts();
+    await upsertContactsMirrorBatch(contacts);
 
-  const opportunities = await listAllOpportunities();
-  await upsertOpportunitiesMirrorBatch(opportunities);
+    const opportunities = await listAllOpportunities();
+    await upsertOpportunitiesMirrorBatch(opportunities);
 
-  return NextResponse.json({
-    ok: true,
-    contactsSynced: contacts.length,
-    opportunitiesSynced: opportunities.length,
-  });
+    return NextResponse.json({
+      ok: true,
+      contactsSynced: contacts.length,
+      opportunitiesSynced: opportunities.length,
+    });
+  } catch (err) {
+    console.error("backfill failed", err);
+    const message = err instanceof Error ? `${err.message}\n${err.stack}` : String(err);
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
 }
