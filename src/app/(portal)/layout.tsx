@@ -1,6 +1,6 @@
 import { getCurrentTeamMember } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase/admin";
-import { getScopedContactIds } from "@/lib/scopedContacts";
+import { getVisibleContactIds } from "@/lib/scopedContacts";
 import NavLink from "./nav-link";
 import SignOutButton from "./sign-out-button";
 import GlobalSearch from "./global-search";
@@ -18,15 +18,14 @@ export default async function PortalLayout({ children }: { children: React.React
   const member = await getCurrentTeamMember();
   const displayName = member.name ?? member.email;
 
-  const scopedContactIds = await getScopedContactIds(member);
+  const visibleContactIds = await getVisibleContactIds(member);
   let pipelineCount: number | null = 0;
-  if (scopedContactIds === null || scopedContactIds.length > 0) {
-    let pipelineCountQuery = supabaseAdmin
+  if (visibleContactIds.length > 0) {
+    ({ count: pipelineCount } = await supabaseAdmin
       .from("opportunities")
       .select("ghl_opportunity_id", { count: "exact", head: true })
-      .eq("status", "open");
-    if (scopedContactIds) pipelineCountQuery = pipelineCountQuery.in("contact_id", scopedContactIds);
-    ({ count: pipelineCount } = await pipelineCountQuery);
+      .eq("status", "open")
+      .in("contact_id", visibleContactIds));
   }
 
   return (

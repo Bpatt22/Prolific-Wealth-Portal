@@ -1,6 +1,6 @@
 import { getCurrentTeamMember } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase/admin";
-import { getScopedContactIds } from "@/lib/scopedContacts";
+import { getScopedContactIds, getVisibleContactIds } from "@/lib/scopedContacts";
 import { PIPELINE_STAGES } from "@/lib/ghl/constants";
 import FunnelBars from "../funnel-bars";
 
@@ -27,13 +27,16 @@ export default async function ReportsPage() {
     fundingRows = data ?? [];
   }
 
-  // Scoped by the linked contact's owner, not the opportunity's own separate
-  // "assigned to" field — see /api/opportunities for why.
+  // Always filtered to "Main"-tagged contacts, including for owners — see
+  // /api/opportunities for why this differs from the funding query above.
   let oppRows: OppRow[] = [];
-  if (contactIds === null || contactIds.length > 0) {
-    let oppQuery = supabaseAdmin.from("opportunities").select("stage_id, monetary_value");
-    if (contactIds) oppQuery = oppQuery.in("contact_id", contactIds);
-    const { data, error } = await oppQuery.returns<OppRow[]>();
+  const visibleContactIds = await getVisibleContactIds(member);
+  if (visibleContactIds.length > 0) {
+    const { data, error } = await supabaseAdmin
+      .from("opportunities")
+      .select("stage_id, monetary_value")
+      .in("contact_id", visibleContactIds)
+      .returns<OppRow[]>();
     if (error) throw error;
     oppRows = data ?? [];
   }

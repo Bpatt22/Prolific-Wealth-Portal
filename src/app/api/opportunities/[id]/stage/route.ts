@@ -18,9 +18,12 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
   // Ownership follows the linked contact's GHL owner, not the opportunity's
   // own separate "assigned to" field — see /api/opportunities for why.
+  // contacts!inner requires a matching row to exist at all, which — since
+  // the contacts mirror only ever holds "Main"-tagged contacts — also
+  // excludes opportunities for non-"Main" contacts, for owners too.
   const { data: existing, error: fetchError } = await supabaseAdmin
     .from("opportunities")
-    .select("contact_id, contacts(owner_id)")
+    .select("contact_id, contacts!inner(owner_id)")
     .eq("ghl_opportunity_id", id)
     .maybeSingle();
 
