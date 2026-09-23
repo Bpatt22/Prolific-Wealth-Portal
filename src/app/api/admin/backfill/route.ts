@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { listAllContacts } from "@/lib/ghl/contacts";
 import { listAllOpportunities } from "@/lib/ghl/opportunities";
 import { upsertContactsMirrorBatch, upsertOpportunitiesMirrorBatch } from "@/lib/sync";
+import { serializeError } from "@/lib/serializeError";
 
 // Paginating ~500+ GHL contacts plus the Main-tag upsert/delete split can
 // run past the platform's default function timeout — extend it explicitly.
@@ -30,7 +31,6 @@ export async function POST(req: NextRequest) {
     });
   } catch (err) {
     console.error("backfill failed", err);
-    const message = err instanceof Error ? `${err.message}\n${err.stack}` : String(err);
-    return NextResponse.json({ error: message }, { status: 500 });
+    return NextResponse.json({ error: serializeError(err) }, { status: 500 });
   }
 }
