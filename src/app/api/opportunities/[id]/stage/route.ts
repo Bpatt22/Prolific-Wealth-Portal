@@ -18,19 +18,27 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
   // Ownership follows the linked contact's GHL owner, not the opportunity's
   // own separate "assigned to" field — see /api/opportunities for why.
-  // contacts!inner requires a matching row to exist at all, which — since
-  // the contacts mirror only ever holds "Main"-tagged contacts — also
-  // excludes opportunities for non-"Main" contacts, for owners too.
+  // Looked up as two plain queries (not a PostgREST embedded `contacts(...)`
+  // select) since opportunities.contact_id has no foreign key to join on —
+  // see /api/opportunities for why. A contact_id with no matching row in
+  // contacts (i.e. not "Main"-tagged) means "not found" for everyone.
   const { data: existing, error: fetchError } = await supabaseAdmin
     .from("opportunities")
-    .select("contact_id, contacts!inner(owner_id)")
+    .select("contact_id")
     .eq("ghl_opportunity_id", id)
     .maybeSingle();
 
   if (fetchError) return NextResponse.json({ error: fetchError.message }, { status: 500 });
-  const contactRow = existing?.contacts as unknown as { owner_id: string | null } | { owner_id: string | null }[] | null;
-  const ownerId = Array.isArray(contactRow) ? contactRow[0]?.owner_id : contactRow?.owner_id;
-  if (!existing || (!member.isOwner && ownerId !== member.ghlUserId)) {
+  if (!existing?.contact_id) return NextResponse.json({ error: "not found" }, { status: 404 });
+
+  const { data: contact, error: contactError } = await supabaseAdmin
+    .from("contacts")
+    .select("owner_id")
+    .eq("ghl_contact_id", existing.contact_id)
+    .maybeSingle();
+
+  if (contactError) return NextResponse.json({ error: contactError.message }, { status: 500 });
+  if (!contact || (!member.isOwner && contact.owner_id !== member.ghlUserId)) {
     return NextResponse.json({ error: "not found" }, { status: 404 });
   }
 
