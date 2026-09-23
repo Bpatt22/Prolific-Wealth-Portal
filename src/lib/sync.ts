@@ -1,6 +1,7 @@
 import "server-only";
 import { supabaseAdmin } from "./supabase/admin";
 import { mapCustomFieldsToPortalKeys } from "./ghl/mapCustomFields";
+import { hasPortalVisibleTag } from "./ghl/constants";
 import type { GhlContact, GhlOpportunity } from "./ghl/types";
 
 function contactRow(contact: GhlContact) {
@@ -36,7 +37,13 @@ function opportunityRow(opp: GhlOpportunity) {
   };
 }
 
+// Only mirrors the contact if it carries the portal-visible tag; otherwise
+// removes it from the mirror (covers both "never qualified" and "tag was
+// just removed" — e.g. from a webhook firing on a tag change).
 export async function upsertContactMirror(contact: GhlContact) {
+  if (!hasPortalVisibleTag(contact.tags)) {
+    return deleteContactMirror(contact.id);
+  }
   const { error } = await supabaseAdmin.from("contacts").upsert(contactRow(contact));
   if (error) throw error;
 }
@@ -48,10 +55,26 @@ export async function upsertOpportunityMirror(opp: GhlOpportunity) {
 
 const BATCH_SIZE = 200;
 
+// Mirrors only contacts carrying the portal-visible tag, and cleans up any
+// previously-mirrored contact that no longer qualifies (tag removed, or
+// this is the first sync since the tag rule was introduced). Because this
+// runs against the *complete* contact list on every cycle (backfill/cron),
+// the mirror self-heals regardless of how a contact's tag changed.
 export async function upsertContactsMirrorBatch(contacts: GhlContact[]) {
-  const rows = contacts.map(contactRow);
+  const qualifying = contacts.filter((c) => hasPortalVisibleTag(c.tags));
+  const disqualifying = contacts.filter((c) => !hasPortalVisibleTag(c.tags)).map((c) => c.id);
+
+  const rows = qualifying.map(contactRow);
   for (let i = 0; i < rows.length; i += BATCH_SIZE) {
     const { error } = await supabaseAdmin.from("contacts").upsert(rows.slice(i, i + BATCH_SIZE));
+    if (error) throw error;
+  }
+
+  for (let i = 0; i < disqualifying.length; i += BATCH_SIZE) {
+    const { error } = await supabaseAdmin
+      .from("contacts")
+      .delete()
+      .in("ghl_contact_id", disqualifying.slice(i, i + BATCH_SIZE));
     if (error) throw error;
   }
 }

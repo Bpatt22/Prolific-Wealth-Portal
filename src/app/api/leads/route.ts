@@ -33,6 +33,9 @@ export async function POST(req: NextRequest) {
     phone: body.phone?.trim() || undefined,
     source: body.source?.trim() || "Prolific Portal",
     assignedTo: member.ghlUserId,
+    // So a lead created here doesn't immediately vanish from the portal —
+    // only "Main"-tagged contacts are ever mirrored/visible.
+    tags: ["Main"],
   });
   await upsertContactMirror(contact);
 

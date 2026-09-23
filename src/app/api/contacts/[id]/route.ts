@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getCurrentTeamMember } from "@/lib/auth";
 import { getContact, listAppointments, listNotes, listTasks, updateContactFields } from "@/lib/ghl/contacts";
 import { upsertContactMirror } from "@/lib/sync";
-import { EDITABLE_FIELD_IDS } from "@/lib/ghl/constants";
+import { EDITABLE_FIELD_IDS, canAccessContact } from "@/lib/ghl/constants";
 import { mapCustomFieldsToPortalKeys } from "@/lib/ghl/mapCustomFields";
 
 // Live view of a single contact: full GHL fields, tags, notes, and appointments —
@@ -14,7 +14,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
 
   const contact = await getContact(id).catch(() => null);
   if (!contact) return NextResponse.json({ error: "not found" }, { status: 404 });
-  if (!member.isOwner && contact.assignedTo !== member.ghlUserId) {
+  if (!canAccessContact(contact, member)) {
     return NextResponse.json({ error: "forbidden" }, { status: 403 });
   }
 
@@ -42,7 +42,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
   const existing = await getContact(id).catch(() => null);
   if (!existing) return NextResponse.json({ error: "not found" }, { status: 404 });
-  if (!member.isOwner && existing.assignedTo !== member.ghlUserId) {
+  if (!canAccessContact(existing, member)) {
     return NextResponse.json({ error: "forbidden" }, { status: 403 });
   }
 

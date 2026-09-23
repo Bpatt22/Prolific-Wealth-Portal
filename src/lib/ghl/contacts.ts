@@ -48,6 +48,7 @@ export function createContact(input: {
   phone?: string;
   source?: string;
   assignedTo?: string;
+  tags?: string[];
 }) {
   return ghl
     .post<{ contact: GhlContact }>("/contacts/", { locationId: GHL_LOCATION_ID, ...input })

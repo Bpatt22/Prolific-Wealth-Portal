@@ -55,3 +55,23 @@ export const EDITABLE_FIELD_IDS: Set<string> = new Set(
 );
 
 export type PortalFieldKey = keyof typeof ALL_PORTAL_FIELDS;
+
+// Only contacts carrying this GHL tag are ever visible/accessible in the
+// portal — everything else is treated as a junk/other-source lead and
+// excluded, for every role including the owner. Case-insensitive match.
+export const PORTAL_VISIBLE_TAG = "main";
+
+export function hasPortalVisibleTag(tags: string[] | null | undefined): boolean {
+  return (tags ?? []).some((t) => t.toLowerCase() === PORTAL_VISIBLE_TAG);
+}
+
+// Single source of truth for "can this member see this contact": it must
+// carry the portal-visible tag, and — unless the member is an owner — be
+// assigned to them in GHL.
+export function canAccessContact(
+  contact: { tags?: string[] | null; assignedTo?: string | null },
+  member: { isOwner: boolean; ghlUserId: string }
+): boolean {
+  if (!hasPortalVisibleTag(contact.tags)) return false;
+  return member.isOwner || contact.assignedTo === member.ghlUserId;
+}
