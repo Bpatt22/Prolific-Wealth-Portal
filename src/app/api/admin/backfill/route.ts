@@ -3,6 +3,10 @@ import { listAllContacts } from "@/lib/ghl/contacts";
 import { listAllOpportunities } from "@/lib/ghl/opportunities";
 import { upsertContactsMirrorBatch, upsertOpportunitiesMirrorBatch } from "@/lib/sync";
 
+// Paginating ~500+ GHL contacts plus the Main-tag upsert/delete split can
+// run past the platform's default function timeout — extend it explicitly.
+export const maxDuration = 60;
+
 // One-time (or re-runnable) full sync from GHL into the Supabase mirror tables.
 // Call with: POST /api/admin/backfill?secret=<ADMIN_BACKFILL_SECRET>
 // Safe to re-run any time — it's a full upsert, not additive.
