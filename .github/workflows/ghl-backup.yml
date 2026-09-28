@@ -1,0 +1,26 @@
+name: GHL backup
+
+# Backs up all GHL data (contacts, opportunities, and — via the sweep —
+# notes/tasks/appointments) into the ghl_backup_* tables, fully separate
+# from the portal's own live sync. Backup freshness isn't time-critical the
+# way the live portal is, so GitHub Actions' occasional throttling of
+# frequent schedules (which ruled it out for the portal's own sync) is a
+# non-issue here.
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch: {}
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Backup contacts + opportunities
+        run: |
+          curl -sf -X POST "https://prolific-wealth-portal-xi.vercel.app/api/backup/contacts-opportunities?secret=${{ secrets.ADMIN_BACKFILL_SECRET }}" \
+            --max-time 60
+      - name: Advance activity sweep
+        run: |
+          curl -sf -X POST "https://prolific-wealth-portal-xi.vercel.app/api/backup/activity-sweep?secret=${{ secrets.ADMIN_BACKFILL_SECRET }}" \
+            --max-time 60
