@@ -45,6 +45,7 @@ export type GhlTask = {
   dueDate?: string | null;
   completed: boolean;
   assignedTo?: string | null;
+  contactId?: string;
 };
 
 export type GhlOpportunity = {
