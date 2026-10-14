@@ -1,4 +1,4 @@
-import Link from "next/link";
+ import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
 import { getCurrentTeamMember, type TeamMember } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase/admin";
@@ -218,6 +218,22 @@ export default async function DashboardPage() {
                 View clients
               </Link>
             </div>
+          </div>
+
+          <div className="card card-pad">
+            <div className="section-head">
+              <h2>Sales Closer Training</h2>
+              <p>Constraint Funding Sales Closer Certification</p>
+            </div>
+            <p>Complete the 8 training modules, knowledge checks, and final certification test.</p>
+            <Link
+              href="https://cnq49foljtrq4s1ez6yq.app.clientclub.net/courses/products/c0b26c7a-79e0-4217-8ba2-50939a55407d"
+              className="btn btn-dark"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Start Certification
+            </Link>
           </div>
 
           <div className="card card-pad">
