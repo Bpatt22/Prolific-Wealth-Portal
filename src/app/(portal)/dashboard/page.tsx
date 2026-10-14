@@ -227,7 +227,7 @@ export default async function DashboardPage() {
             </div>
             <p>Complete the 8 training modules, knowledge checks, and final certification test.</p>
             <Link
-              href="https://cnq49foljtrq4s1ez6yq.app.clientclub.net/courses/products/c0b26c7a-79e0-4217-8ba2-50939a55407d"
+              href="https://cnq49foljtrq4s1ez6yq.app.clientclub.net/courses/offers/fbe773d6-4177-4e07-b2b1-ca72030aff29"
               className="btn btn-dark"
               target="_blank"
               rel="noopener noreferrer"
