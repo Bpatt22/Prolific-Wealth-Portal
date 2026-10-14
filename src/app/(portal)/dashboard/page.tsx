@@ -222,6 +222,22 @@ export default async function DashboardPage() {
 
           <div className="card card-pad">
             <div className="section-head">
+              <h2>Sales Closer Training</h2>
+              <p>Constraint Funding Sales Closer Certification</p>
+            </div>
+            <p>Complete the 8 training modules, knowledge checks, and final certification test.</p>
+            <Link
+              href="https://cnq49foljtrq4s1ez6yq.app.clientclub.net/courses/offers/fbe773d6-4177-4e07-b2b1-ca72030aff29"
+              className="btn btn-dark"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Start Certification
+            </Link>
+          </div>
+
+          <div className="card card-pad">
+            <div className="section-head">
               <h2>Recent activity</h2>
             </div>
             {data.recentActivity.length === 0 ? (
