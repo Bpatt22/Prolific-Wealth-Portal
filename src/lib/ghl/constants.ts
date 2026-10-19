@@ -37,6 +37,10 @@ export const VIEW_ONLY_FIELDS = {
   day90Date: { id: "upe5DUELtzM7sPuyPntF", label: "Day 90 Date" },
   prolificCut: { id: "l1j4aI98MERmUfJKqoga", label: "Prolific Cut" },
   prolificCutPaid: { id: "aPplBXam8U3EtDmVmHwZ", label: "Prolific cut paid?" },
+  strategyCallTime: { id: "0wTSW9D92bPiPXSUXh8S", label: "Strategy Call Time" },
+  bookingStatus: { id: "tHO2nU24qrbvdv8MZGQF", label: "Booking Status" },
+  assignedCloser: { id: "DT0DGTiXNn0MoxhB60fo", label: "Assigned Closer" },
+  leadTimezone: { id: "FXBIvqt7H8LznmWyopaD", label: "Lead Timezone" },
 } as const;
 
 export const ALL_PORTAL_FIELDS = { ...EDITABLE_FIELDS, ...VIEW_ONLY_FIELDS };
