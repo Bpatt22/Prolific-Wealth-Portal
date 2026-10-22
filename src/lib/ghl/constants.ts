@@ -43,7 +43,15 @@ export const VIEW_ONLY_FIELDS = {
   leadTimezone: { id: "FXBIvqt7H8LznmWyopaD", label: "Lead Timezone" },
 } as const;
 
-export const ALL_PORTAL_FIELDS = { ...EDITABLE_FIELDS, ...VIEW_ONLY_FIELDS };
+// Not shown in the team/owner "Other fields" list (which only iterates
+// VIEW_ONLY_FIELDS) — exists so mapCustomFieldsToPortalKeys picks it up into
+// the contacts mirror's custom_fields jsonb, which is what affiliate
+// matching (see canAffiliateAccessContact) filters on.
+export const INTERNAL_FIELDS = {
+  referredBy: { id: "hL9I3tPASHEUI3dn44uh", label: "Referred By?" },
+} as const;
+
+export const ALL_PORTAL_FIELDS = { ...EDITABLE_FIELDS, ...VIEW_ONLY_FIELDS, ...INTERNAL_FIELDS };
 
 export const CONSTRAINT_TYPE_OPTIONS = [
   "Sales Team",
@@ -78,4 +86,23 @@ export function canAccessContact(
 ): boolean {
   if (!hasPortalVisibleTag(contact.tags)) return false;
   return member.isOwner || contact.assignedTo === member.ghlUserId;
+}
+
+// Collapses whitespace and case so "Fahad", " fahad ", and "FAHAD" all match
+// the same affiliate — GHL's "Referred By?" field is free text, typed by
+// hand or by a workflow, so exact-string matching is too brittle.
+export function normalizeAffiliateName(name: string | null | undefined): string {
+  return (name ?? "").trim().toLowerCase().replace(/\s+/g, " ");
+}
+
+// Affiliates are scoped entirely differently from team members: no GHL
+// ownership involved at all, just a free-text name match against the
+// contact's "Referred By?" custom field. Still gated by the Main tag like
+// every other role.
+export function canAffiliateAccessContact(
+  contact: { tags?: string[] | null; referredBy?: string | null },
+  affiliate: { name: string }
+): boolean {
+  if (!hasPortalVisibleTag(contact.tags)) return false;
+  return normalizeAffiliateName(contact.referredBy) === normalizeAffiliateName(affiliate.name);
 }

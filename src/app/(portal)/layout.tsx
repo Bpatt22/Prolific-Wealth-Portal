@@ -103,6 +103,13 @@ export default async function PortalLayout({ children }: { children: React.React
                 </svg>
                 Team
               </NavLink>
+              <NavLink href="/affiliates">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M16 3l4 4-4 4M20 7H8a4 4 0 0 0-4 4v1M8 21l-4-4 4-4M4 17h12a4 4 0 0 0 4-4v-1" />
+                  <circle cx="19" cy="19" r="2" />
+                </svg>
+                Affiliates
+              </NavLink>
             </>
           )}
         </nav>

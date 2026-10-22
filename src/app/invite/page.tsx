@@ -72,7 +72,7 @@ export default function InvitePage() {
     }
 
     setSaving(true);
-    const { error: updateError } = await supabase.auth.updateUser({ password });
+    const { data: updateData, error: updateError } = await supabase.auth.updateUser({ password });
     setSaving(false);
 
     if (updateError) {
@@ -80,7 +80,14 @@ export default function InvitePage() {
       return;
     }
 
-    router.push("/dashboard");
+    // Affiliates have no team_members row — check which role this login
+    // actually is (RLS only lets a user read its own affiliates row).
+    const userId = updateData.user?.id;
+    const { data: affiliateRow } = userId
+      ? await supabase.from("affiliates").select("id").eq("auth_user_id", userId).maybeSingle()
+      : { data: null };
+
+    router.push(affiliateRow ? "/affiliate" : "/dashboard");
     router.refresh();
   }
 
