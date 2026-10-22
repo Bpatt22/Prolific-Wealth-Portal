@@ -18,9 +18,9 @@ jobs:
     steps:
       - name: Backup contacts + opportunities
         run: |
-          curl -sf -X POST "https://prolific-wealth-portal-xi.vercel.app/api/backup/contacts-opportunities?secret=${{ secrets.ADMIN_BACKFILL_SECRET }}" \
+          curl -sf -X POST "https://app.pwgportal.com/api/backup/contacts-opportunities?secret=${{ secrets.ADMIN_BACKFILL_SECRET }}" \
             --max-time 60
       - name: Advance activity sweep
         run: |
-          curl -sf -X POST "https://prolific-wealth-portal-xi.vercel.app/api/backup/activity-sweep?secret=${{ secrets.ADMIN_BACKFILL_SECRET }}" \
+          curl -sf -X POST "https://app.pwgportal.com/api/backup/activity-sweep?secret=${{ secrets.ADMIN_BACKFILL_SECRET }}" \
             --max-time 60
