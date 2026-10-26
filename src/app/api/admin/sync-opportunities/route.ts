@@ -5,10 +5,11 @@ import { serializeError } from "@/lib/serializeError";
 
 // Lightweight companion to /api/admin/backfill — syncs only opportunities,
 // not the full ~500+ contact list. Contacts already sync in real time via
-// the GHL Workflow webhook, so this is what the every-minute pg_cron job
-// actually needs to stay fast: opportunity stage changes made directly in
-// GHL are the one thing with no webhook coverage.
+// the GHL Workflow webhook; this periodic reconciliation is what actually
+// removes an opportunity from the mirror when it's deleted in GHL (there's
+// no reliable "OpportunityDelete" workflow trigger to depend on).
 // Call with: POST /api/admin/sync-opportunities?secret=<ADMIN_BACKFILL_SECRET>
+export const maxDuration = 60;
 export async function POST(req: NextRequest) {
   const secret = req.nextUrl.searchParams.get("secret");
   if (!secret || secret !== process.env.ADMIN_BACKFILL_SECRET) {

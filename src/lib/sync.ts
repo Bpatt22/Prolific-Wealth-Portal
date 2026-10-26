@@ -55,14 +55,15 @@ export async function upsertOpportunityMirror(opp: GhlOpportunity) {
 
 const BATCH_SIZE = 200;
 
-// Mirrors only contacts carrying the portal-visible tag, and cleans up any
-// previously-mirrored contact that no longer qualifies (tag removed, or
-// this is the first sync since the tag rule was introduced). Because this
-// runs against the *complete* contact list on every cycle (backfill/cron),
-// the mirror self-heals regardless of how a contact's tag changed.
+// Mirrors only contacts carrying the portal-visible tag, and removes any
+// previously-mirrored contact that no longer qualifies — whether it lost the
+// tag, or it was deleted from GHL entirely and so doesn't appear in
+// `contacts` at all this run. Because this runs against the *complete*
+// contact list on every cycle (backfill/cron), the mirror self-heals
+// regardless of how a contact stopped qualifying.
 export async function upsertContactsMirrorBatch(contacts: GhlContact[]) {
   const qualifying = contacts.filter((c) => hasPortalVisibleTag(c.tags));
-  const disqualifying = contacts.filter((c) => !hasPortalVisibleTag(c.tags)).map((c) => c.id);
+  const qualifyingIds = new Set(qualifying.map((c) => c.id));
 
   const rows = qualifying.map(contactRow);
   for (let i = 0; i < rows.length; i += BATCH_SIZE) {
@@ -70,19 +71,40 @@ export async function upsertContactsMirrorBatch(contacts: GhlContact[]) {
     if (error) throw error;
   }
 
-  for (let i = 0; i < disqualifying.length; i += BATCH_SIZE) {
+  const { data: existing, error: existingError } = await supabaseAdmin.from("contacts").select("ghl_contact_id");
+  if (existingError) throw existingError;
+  const toDelete = (existing ?? []).map((r) => r.ghl_contact_id).filter((id) => !qualifyingIds.has(id));
+
+  for (let i = 0; i < toDelete.length; i += BATCH_SIZE) {
     const { error } = await supabaseAdmin
       .from("contacts")
       .delete()
-      .in("ghl_contact_id", disqualifying.slice(i, i + BATCH_SIZE));
+      .in("ghl_contact_id", toDelete.slice(i, i + BATCH_SIZE));
     if (error) throw error;
   }
 }
 
+// Same full-sync self-healing as above: upserts every opportunity GHL has
+// (for the portal's pipeline) and removes any mirrored opportunity that
+// isn't in this run's fetch — i.e. it was deleted from GHL.
 export async function upsertOpportunitiesMirrorBatch(opportunities: GhlOpportunity[]) {
+  const incomingIds = new Set(opportunities.map((o) => o.id));
+
   const rows = opportunities.map(opportunityRow);
   for (let i = 0; i < rows.length; i += BATCH_SIZE) {
     const { error } = await supabaseAdmin.from("opportunities").upsert(rows.slice(i, i + BATCH_SIZE));
+    if (error) throw error;
+  }
+
+  const { data: existing, error: existingError } = await supabaseAdmin.from("opportunities").select("ghl_opportunity_id");
+  if (existingError) throw existingError;
+  const toDelete = (existing ?? []).map((r) => r.ghl_opportunity_id).filter((id) => !incomingIds.has(id));
+
+  for (let i = 0; i < toDelete.length; i += BATCH_SIZE) {
+    const { error } = await supabaseAdmin
+      .from("opportunities")
+      .delete()
+      .in("ghl_opportunity_id", toDelete.slice(i, i + BATCH_SIZE));
     if (error) throw error;
   }
 }

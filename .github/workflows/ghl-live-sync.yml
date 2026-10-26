@@ -1,0 +1,29 @@
+name: GHL live sync reconciliation
+
+# Contacts and opportunities sync into the portal's live mirror tables in
+# real time via GHL Workflow webhooks on create/update. But GHL doesn't
+# reliably fire a workflow trigger on delete, so a contact/opportunity
+# removed directly in GHL can otherwise sit stale in the portal forever.
+# This periodically re-runs the full-sync endpoints, which upsert everything
+# GHL currently has and remove any mirrored row that's no longer there —
+# i.e. it's the safety net that catches deletions the webhooks miss.
+# Not time-critical (creates/updates already arrive instantly via webhook),
+# so the 15-minute cadence here is fine despite GitHub Actions' occasional
+# schedule slippage at higher frequencies.
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch: {}
+
+jobs:
+  reconcile:
+    runs-on: ubuntu-latest
+    steps:
+      # Covers both contacts and opportunities — no need to also call
+      # /api/admin/sync-opportunities, that's just a lighter-weight
+      # opportunities-only variant of the same thing this already does.
+      - name: Full contacts + opportunities backfill
+        run: |
+          curl -sf -X POST "https://app.pwgportal.com/api/admin/backfill?secret=${{ secrets.ADMIN_BACKFILL_SECRET }}" \
+            --max-time 60

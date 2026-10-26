@@ -10,7 +10,10 @@ export const maxDuration = 60;
 
 // One-time (or re-runnable) full sync from GHL into the Supabase mirror tables.
 // Call with: POST /api/admin/backfill?secret=<ADMIN_BACKFILL_SECRET>
-// Safe to re-run any time — it's a full upsert, not additive.
+// Safe to re-run any time — it's a full upsert, and it also removes any
+// mirrored contact/opportunity that's no longer in GHL (deleted, or — for
+// contacts — no longer Main-tagged), so this is what actually reconciles
+// deletions made directly in GHL back into the portal.
 export async function POST(req: NextRequest) {
   const secret = req.nextUrl.searchParams.get("secret");
   if (!secret || secret !== process.env.ADMIN_BACKFILL_SECRET) {
