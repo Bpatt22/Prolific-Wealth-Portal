@@ -2,7 +2,7 @@ import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
 import { getCurrentTeamMember, type TeamMember } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase/admin";
-import { CONSTRAINT_TYPE_OPTIONS, PIPELINE_STAGES } from "@/lib/ghl/constants";
+import { CONSTRAINT_TYPE_OPTIONS, PIPELINE_STAGES, normalizeAffiliateName } from "@/lib/ghl/constants";
 import FunnelBars from "../funnel-bars";
 import NewLeadButton from "../new-lead-button";
 
@@ -22,8 +22,9 @@ function formatCurrency(n: number) {
 }
 
 const LOST_STAGE_ID = PIPELINE_STAGES.find((s) => s.name === "Lost / Disqualified")?.id;
+const LEAD_LIST_LIMIT = 25;
 
-async function getDashboardData(member: TeamMember) {
+async function getDashboardData(member: TeamMember, affiliateOnly: boolean, showAll: boolean) {
   let contactsQuery = supabaseAdmin
     .from("contacts")
     .select("ghl_contact_id, first_name, last_name, custom_fields, date_updated");
@@ -110,6 +111,40 @@ async function getDashboardData(member: TeamMember) {
       href: `/contacts/${c.ghl_contact_id}`,
     }));
 
+  // Owner-only. A lead is Direct when "Referred By?" is empty after
+  // normalization; anything else is Affiliate, even if the value matches no
+  // row in the affiliates table. String(...) guards against non-string values.
+  // Counts always cover every lead; the filter and the row cap only affect
+  // which rows are listed.
+  let leadSources: {
+    directCount: number;
+    affiliateCount: number;
+    rows: { id: string; name: string; referredBy: string; dateUpdated: string | null; isAffiliate: boolean }[];
+    total: number;
+  } | null = null;
+  if (member.isOwner) {
+    const leads = contacts
+      .map((c) => {
+        const referredBy = String(c.custom_fields?.referredBy ?? "");
+        return {
+          id: c.ghl_contact_id,
+          name: [c.first_name, c.last_name].filter(Boolean).join(" ") || "Contact",
+          referredBy,
+          dateUpdated: c.date_updated,
+          isAffiliate: normalizeAffiliateName(referredBy) !== "",
+        };
+      })
+      .sort((a, b) => (b.dateUpdated ?? "").localeCompare(a.dateUpdated ?? ""));
+    const affiliateCount = leads.filter((l) => l.isAffiliate).length;
+    const matching = affiliateOnly ? leads.filter((l) => l.isAffiliate) : leads;
+    leadSources = {
+      directCount: leads.length - affiliateCount,
+      affiliateCount,
+      total: matching.length,
+      rows: showAll ? matching : matching.slice(0, LEAD_LIST_LIMIT),
+    };
+  }
+
   const recentActivity = [
     ...recentContacts,
     ...recentOpps
@@ -131,13 +166,31 @@ async function getDashboardData(member: TeamMember) {
     },
     stageRows,
     constraintRows,
+    leadSources,
     recentActivity,
   };
 }
 
-export default async function DashboardPage() {
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}) {
   const member = await getCurrentTeamMember();
-  const data = await getDashboardData(member);
+  // Both parameters are only meaningful for owners; team members ignore them.
+  const query = member.isOwner ? await searchParams : {};
+  const affiliateOnly = query.source === "affiliate";
+  const showAll = query.show === "all";
+  const data = await getDashboardData(member, affiliateOnly, showAll);
+
+  // Each link keeps the other control's parameter.
+  const dashboardHref = (opts: { affiliateOnly: boolean; showAll: boolean }) => {
+    const p = new URLSearchParams();
+    if (opts.affiliateOnly) p.set("source", "affiliate");
+    if (opts.showAll) p.set("show", "all");
+    const qs = p.toString();
+    return qs ? `/dashboard?${qs}` : "/dashboard";
+  };
 
   const kpis = [
     { label: "Active Opportunities", value: String(data.kpis.activeOpportunities) },
@@ -188,6 +241,84 @@ export default async function DashboardPage() {
             </div>
             <FunnelBars rows={data.constraintRows} />
           </div>
+
+          {data.leadSources && (
+            <div className="card card-pad">
+              <div className="section-head row between">
+                <div>
+                  <h2>Lead sources</h2>
+                  <p>
+                    {data.leadSources.directCount} Direct · {data.leadSources.affiliateCount} Affiliate, by the Referred By? field in GHL
+                  </p>
+                </div>
+                {affiliateOnly ? (
+                  <Link href={dashboardHref({ affiliateOnly: false, showAll })} className="btn btn-sm">
+                    All leads
+                  </Link>
+                ) : (
+                  <Link href={dashboardHref({ affiliateOnly: true, showAll })} className="btn btn-sm">
+                    Affiliate only
+                  </Link>
+                )}
+              </div>
+              {data.leadSources.rows.length === 0 ? (
+                <div className="empty-state">
+                  <div className="t">{affiliateOnly ? "No affiliate leads" : "No leads yet"}</div>
+                  <div className="d">
+                    {affiliateOnly ? "No contacts have a Referred By? value." : "Contacts will show up here once they sync from GHL."}
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <div className="table-wrap">
+                    <table>
+                      <thead>
+                        <tr>
+                          <th>Name</th>
+                          <th>Referred By</th>
+                          <th>Updated</th>
+                          <th>Source</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {data.leadSources.rows.map((r) => (
+                          <tr key={r.id}>
+                            <td>
+                              <Link href={`/contacts/${r.id}`}>{r.name}</Link>
+                            </td>
+                            <td className="cell-sub">{r.isAffiliate ? r.referredBy : "—"}</td>
+                            <td className="cell-sub">
+                              {r.dateUpdated ? formatDistanceToNow(new Date(r.dateUpdated), { addSuffix: true }) : "—"}
+                            </td>
+                            <td>
+                              <span className={r.isAffiliate ? "badge badge-violet" : "badge badge-slate"}>
+                                {r.isAffiliate ? "Affiliate" : "Direct"}
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                  <div className="row between" style={{ marginTop: 10, fontSize: 12 }}>
+                    <span>
+                      Showing {data.leadSources.rows.length} of {data.leadSources.total}
+                    </span>
+                    {data.leadSources.total > LEAD_LIST_LIMIT &&
+                      (showAll ? (
+                        <Link href={dashboardHref({ affiliateOnly, showAll: false })} className="btn btn-sm">
+                          Show fewer
+                        </Link>
+                      ) : (
+                        <Link href={dashboardHref({ affiliateOnly, showAll: true })} className="btn btn-sm">
+                          Show all {data.leadSources.total}
+                        </Link>
+                      ))}
+                  </div>
+                </>
+              )}
+            </div>
+          )}
         </div>
 
         <div className="stack">
