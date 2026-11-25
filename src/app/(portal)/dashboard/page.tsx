@@ -3,6 +3,7 @@ import { formatDistanceToNow } from "date-fns";
 import { getCurrentTeamMember, type TeamMember } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { CONSTRAINT_TYPE_OPTIONS, PIPELINE_STAGES, normalizeAffiliateName } from "@/lib/ghl/constants";
+import { buildMeetings, type Meeting } from "@/lib/meetings";
 import FunnelBars from "../funnel-bars";
 import NewLeadButton from "../new-lead-button";
 
@@ -23,6 +24,48 @@ function formatCurrency(n: number) {
 
 const LOST_STAGE_ID = PIPELINE_STAGES.find((s) => s.name === "Lost / Disqualified")?.id;
 const LEAD_LIST_LIMIT = 25;
+const PAST_MEETINGS_LIMIT = 25;
+
+function statusBadgeClass(status: string) {
+  const s = status.toLowerCase();
+  if (s === "booked") return "badge badge-green";
+  if (s === "cancelled" || s === "canceled") return "badge badge-red";
+  return "badge badge-slate";
+}
+
+function MeetingsTable({ rows }: { rows: Meeting[] }) {
+  return (
+    <div className="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>When</th>
+            <th>Name</th>
+            <th>Closer</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((m) => (
+            <tr key={m.id}>
+              <td>
+                {m.when}
+                <div className="cell-sub">{m.zoneLabel}</div>
+              </td>
+              <td>
+                <Link href={`/contacts/${m.id}`}>{m.name}</Link>
+              </td>
+              <td className="cell-sub">{m.closer}</td>
+              <td>
+                <span className={statusBadgeClass(m.status)}>{m.status || "—"}</span>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
 
 async function getDashboardData(member: TeamMember, affiliateOnly: boolean, showAll: boolean) {
   let contactsQuery = supabaseAdmin
@@ -145,6 +188,10 @@ async function getDashboardData(member: TeamMember, affiliateOnly: boolean, show
     };
   }
 
+  // Owner-only, like leadSources: strategy-call bookings from the mirrored
+  // iClosed fields. Non-owners get null, so the section never renders for them.
+  const meetings = member.isOwner ? buildMeetings(contacts) : null;
+
   const recentActivity = [
     ...recentContacts,
     ...recentOpps
@@ -167,6 +214,7 @@ async function getDashboardData(member: TeamMember, affiliateOnly: boolean, show
     stageRows,
     constraintRows,
     leadSources,
+    meetings,
     recentActivity,
   };
 }
@@ -316,6 +364,47 @@ export default async function DashboardPage({
                       ))}
                   </div>
                 </>
+              )}
+            </div>
+          )}
+
+          {data.meetings && (
+            <div className="card card-pad">
+              <div className="section-head">
+                <h2>Meetings</h2>
+                <p>Strategy calls booked through iClosed, shown in each lead&apos;s timezone</p>
+              </div>
+              <div className="section-head" style={{ marginTop: 4 }}>
+                <h2 style={{ fontSize: 13 }}>Upcoming ({data.meetings.upcoming.length})</h2>
+              </div>
+              {data.meetings.upcoming.length === 0 ? (
+                <div className="empty-state">
+                  <div className="t">No upcoming calls</div>
+                </div>
+              ) : (
+                <MeetingsTable rows={data.meetings.upcoming} />
+              )}
+              <div className="section-head" style={{ marginTop: 16 }}>
+                <h2 style={{ fontSize: 13 }}>Past ({data.meetings.past.length})</h2>
+              </div>
+              {data.meetings.past.length === 0 ? (
+                <div className="empty-state">
+                  <div className="t">No past calls</div>
+                </div>
+              ) : (
+                <>
+                  <MeetingsTable rows={data.meetings.past.slice(0, PAST_MEETINGS_LIMIT)} />
+                  {data.meetings.past.length > PAST_MEETINGS_LIMIT && (
+                    <div style={{ marginTop: 10, fontSize: 12 }}>
+                      Showing the {PAST_MEETINGS_LIMIT} most recent of {data.meetings.past.length}
+                    </div>
+                  )}
+                </>
+              )}
+              {data.meetings.unreadable > 0 && (
+                <div style={{ marginTop: 10, fontSize: 12 }}>
+                  {data.meetings.unreadable} booking{data.meetings.unreadable === 1 ? "" : "s"} with an unreadable call time not shown.
+                </div>
               )}
             </div>
           )}
